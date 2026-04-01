@@ -591,13 +591,14 @@
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            database.ref('partida/rondas').remove();
+            // CORRECCIÓN AQUÍ: Ahora borra TODO el nodo de rondas para eliminar las respuestas viejas.
+            database.ref('partida/rondas').set(null); 
             prepararNuevasPalabras();
             reseteoDePuntos();
             database.ref('partida/ronda').set(1);
         }
 
-        // === 8. LÓGICA DE AUDIO (Arreglada) ===
+        // === 8. LÓGICA DE AUDIO (REPARADA SIN BLOQUEOS) ===
         let musicaIniciada = false;
 
         function conmutarMusica() {
@@ -610,7 +611,9 @@
                     btn.classList.remove('apagado');
                     musicaIniciada = true;
                 }).catch(error => {
-                    alert("Haz clic en cualquier parte de la pantalla primero (interacción de usuario requerida por el navegador) y luego vuelve a presionar el botón de música.");
+                    // SE ELIMINÓ EL ALERT BLOQUEANTE
+                    console.log("Reproducción automática prevenida por el navegador.");
+                    btn.innerText = "🔇 (Toca aquí)";
                 });
             } else {
                 audio.pause();
