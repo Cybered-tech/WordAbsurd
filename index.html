@@ -1,23 +1,26 @@
 <!DOCTYPE html><html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRON: El Traductor Absurdo - Matrix Edition</title>
+    <title>TRON: El Traductor Absurdo - Grid Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap');
+
         :root {
-            --bg: #000000; /* Fondo negro puro */
-            --card: rgba(0, 15, 0, 0.9); /* Tarjetas verde muy oscuro con transparencia */
-            --accent: #00ff41; /* Verde Matrix brillante (Phosphor green) */
-            --accent-glow: rgba(0, 255, 65, 0.6);
-            --text: #c0ffc0; /* Texto verde muy pálido */
-            --grid-color: rgba(0, 255, 65, 0.03);
+            --bg: #020613; /* Deep dark blue instead of pitch black */
+            --card: rgba(4, 12, 36, 0.85); /* Tech card background */
+            --accent: #00e5ff; /* Tron Electric Blue */
+            --accent-glow: rgba(0, 229, 255, 0.6);
+            --text: #c2f3ff; /* Very pale blue text */
+            --grid-color: rgba(0, 229, 255, 0.1);
         }
         
         body {
-            margin: 0; font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada */
+            margin: 0; 
+            font-family: 'Roboto Mono', monospace;
             background-color: var(--bg);
             color: var(--text);
             display: flex; justify-content: center; align-items: center;
@@ -25,89 +28,121 @@
             overflow-x: hidden; position: relative;
         }
 
-        /* --- Fondo Animado Matrix --- */
-        #matrixCanvas {
+        /* --- CPU & RAM Data Bus Background --- */
+        #tronCanvas {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1; /* Detrás de todo */
-            opacity: 0.2; /* Suave para no distraer */
+            z-index: -1;
+            opacity: 0.7;
         }
         
         .container {
             width: 100%; max-width: 700px;
             background-color: var(--card); padding: 2.5rem;
-            border-radius: 0; text-align: center; /* Sin bordes redondeados */
-            border: 1px solid var(--accent);
-            box-shadow: 0 0 15px var(--accent-glow);
-            position: relative; z-index: 1; /* Sobre el canvas */
+            border-radius: 4px; text-align: center;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow), inset 0 0 15px rgba(0, 229, 255, 0.2);
+            position: relative; z-index: 1;
+            backdrop-filter: blur(5px);
         }
         
         h1 {
-            color: #ffffff; text-transform: uppercase; letter-spacing: 5px;
-            font-size: 1.8rem; text-shadow: 0 0 10px var(--accent-glow);
-            margin-bottom: 0.5rem;
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff; text-transform: uppercase; letter-spacing: 6px;
+            font-size: 1.8rem; text-shadow: 0 0 15px var(--accent-glow);
+            margin-bottom: 0.5rem; font-weight: 900;
         }
         .word {
-            font-size: 3.5rem; font-weight: bold; color: var(--accent);
-            margin: 1rem 0; letter-spacing: 8px;
-            text-shadow: 0 0 15px var(--accent-glow);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.2rem; font-weight: 700; color: #ffffff;
+            margin: 1rem 0; letter-spacing: 5px;
+            text-shadow: 0 0 20px var(--accent-glow), 0 0 40px rgba(0, 229, 255, 0.4);
             text-transform: uppercase;
         }
         .timer-box {
+            font-family: 'Orbitron', sans-serif;
             font-size: 1.1rem; font-weight: bold; color: #ffffff;
-            border: 1px solid var(--accent); padding: 0.5rem; 
-            background: rgba(0, 255, 65, 0.1); display: inline-block;
+            border: 1px solid var(--accent); padding: 0.6rem; 
+            background: rgba(0, 229, 255, 0.15); display: inline-block;
             margin-bottom: 1rem;
+            box-shadow: 0 0 10px var(--accent-glow);
         }
         input {
             width: 100%; padding: 1rem; border: 1px solid var(--accent);
-            background: #000000; color: #ffffff; box-sizing: border-box;
+            background: rgba(1, 5, 20, 0.9); color: #ffffff; box-sizing: border-box;
             font-size: 1rem; margin-bottom: 1rem; text-align: center;
-            font-family: 'Courier New', monospace;
+            font-family: 'Roboto Mono', monospace;
+            border-radius: 2px;
         }
-        input:focus { outline: none; box-shadow: 0 0 10px var(--accent-glow); }
+        input:focus { 
+            outline: none; 
+            box-shadow: 0 0 15px var(--accent-glow);
+            border-color: #ffffff;
+        }
 
         .btn {
+            font-family: 'Orbitron', sans-serif;
             background-color: transparent; color: var(--accent);
             border: 1px solid var(--accent); padding: 1rem 1.5rem; font-size: 1rem;
-            font-weight: bold; cursor: pointer; width: 100%;
-            text-transform: uppercase; letter-spacing: 2px;
-            transition: all 0.2s; font-family: 'Courier New', monospace;
+            font-weight: 700; cursor: pointer; width: 100%;
+            text-transform: uppercase; letter-spacing: 3px;
+            transition: all 0.3s;
+            box-shadow: 0 0 5px rgba(0, 229, 255, 0.3);
         }
-        .btn:hover { background-color: var(--accent); color: #000000; box-shadow: 0 0 10px var(--accent-glow); }
-        .btn:disabled { border-color: #004400; color: #004400; cursor: not-allowed; }
+        .btn:hover { 
+            background-color: var(--accent); 
+            color: #020613; 
+            box-shadow: 0 0 20px var(--accent-glow); 
+        }
+        .btn:disabled { border-color: #004455; color: #004455; cursor: not-allowed; box-shadow: none;}
         
         .list-group { text-align: left; margin-top: 1rem; }
         .list-item {
-            background: rgba(0, 20, 0, 0.5); padding: 1rem;
-            border: 1px solid rgba(0, 255, 65, 0.2); margin-bottom: 0.5rem;
-            cursor: pointer; transition: background 0.2s;
+            background: rgba(0, 15, 40, 0.6); padding: 1rem;
+            border: 1px solid rgba(0, 229, 255, 0.3); margin-bottom: 0.5rem;
+            cursor: pointer; transition: all 0.2s;
+            border-radius: 2px;
         }
-        .list-item:hover { background: rgba(0, 255, 65, 0.1); border-color: var(--accent); }
-        .voted { border-color: #ffffff !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); color: #fff; }
+        .list-item:hover { 
+            background: rgba(0, 229, 255, 0.15); 
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+        }
+        .voted { 
+            border-color: #ffffff !important; 
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6); 
+            color: #fff;
+            background: rgba(0, 229, 255, 0.3);
+        }
         
         .grid-final {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 1.5rem;
         }
-        .final-box { padding: 1.5rem; border: 1px solid var(--accent); background: rgba(0,0,0,0.8); text-align: left;}
-        .final-box h4 { margin: 0 0 0.5rem 0; text-transform: uppercase; color: var(--accent); }
+        .final-box { padding: 1.5rem; border: 1px solid var(--accent); background: rgba(0,5,15,0.9); text-align: left;}
+        .final-box h4 { 
+            font-family: 'Orbitron', sans-serif;
+            margin: 0 0 0.5rem 0; text-transform: uppercase; color: var(--accent); 
+        }
         .real-box { border-color: #ffffff; }
         .real-box h4 { color: #ffffff; }
         
         .admin-panel {
-            margin-top: 15px; padding: 10px; border: 1px dashed yellow;
-            background: rgba(255,255,0,0.05); display: none;
+            margin-top: 15px; padding: 10px; border: 1px dashed #ff9900;
+            background: rgba(255,153,0,0.05); display: none;
         }
 
         .leaderboard {
             margin-top: 1.5rem; padding: 1rem;
-            border: 1px solid rgba(0, 255, 65, 0.1);
-            background: rgba(0, 10, 0, 0.5);
+            border: 1px solid rgba(0, 229, 255, 0.2);
+            background: rgba(0, 10, 30, 0.7);
         }
-        .leaderboard h3 { color: #ffffff; margin-top: 0; font-size: 1rem; letter-spacing: 2px;}
+        .leaderboard h3 { 
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff; margin-top: 0; font-size: 1rem; letter-spacing: 2px;
+        }
         .leaderboard-list { text-align: left; padding: 0; list-style: none; margin: 0; }
         .leaderboard-item {
             display: flex; justify-content: space-between;
-            padding: 0.5rem; border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+            padding: 0.5rem; border-bottom: 1px solid rgba(0, 229, 255, 0.1);
             font-size: 0.9rem;
         }
         .leaderboard-item:last-child { border-bottom: none; }
@@ -115,23 +150,23 @@
 
         #pantallaCorona {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 5, 0, 0.95); z-index: 100;
+            background: rgba(1, 5, 15, 0.96); z-index: 100;
             justify-content: center; align-items: center; flex-direction: column;
         }
         .corona-box {
-            border: 2px solid #ffffff; background: #000000;
+            border: 2px solid #ffffff; background: #020613;
             padding: 3rem; text-align: center; max-width: 500px;
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3), 0 0 15px var(--accent-glow);
         }
-        .corona-titulo { color: #ffffff; letter-spacing: 5px; font-size: 2.5rem; margin: 0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+        .corona-titulo { font-family: 'Orbitron', sans-serif; color: #ffffff; letter-spacing: 5px; font-size: 2.5rem; margin: 0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
         .corona-sub { color: var(--text); letter-spacing: 2px; font-size: 1.2rem; margin: 1rem 0; }
-        .campeon-nombre { font-size: 3.5rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); margin: 1.5rem 0; text-transform: uppercase; }
+        .campeon-nombre { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); margin: 1.5rem 0; text-transform: uppercase; }
 
         /* --- Botón de Música Flotante --- */
         #btnMusica {
             position: fixed; bottom: 20px; right: 20px;
             width: 50px; height: 50px; border-radius: 50%;
-            background: rgba(0, 30, 0, 0.8); border: 1px solid var(--accent);
+            background: rgba(0, 15, 30, 0.8); border: 1px solid var(--accent);
             color: var(--accent); font-size: 1.5rem; cursor: pointer;
             z-index: 10; display: flex; justify-content: center; align-items: center;
             box-shadow: 0 0 10px var(--accent-glow); transition: all 0.3s;
@@ -143,7 +178,7 @@
 
     <audio id="musicaFondo" loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3"></audio>
 
-    <canvas id="matrixCanvas"></canvas>
+    <canvas id="tronCanvas"></canvas>
 
     <button id="btnMusica" class="apagado" onclick="conmutarMusica()" title="Encender/Apagar Música de Fondo">🔇</button>
 
@@ -152,7 +187,7 @@
             <p class="corona-titulo">CONEXIÓN FINALIZADA</p>
             <p class="corona-sub">EL JUGADOR QUE LOGRÓ DECODIFICAR LA RED ES:</p>
             <div class="campeon-nombre" id="nombreCampeon">---</div>
-            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; font-family: monospace;">El arquitecto (host) puede reiniciar la simulación.</p>
+            <p style="color: #557; font-size: 0.9rem; margin-bottom: 1.5rem; font-family: monospace;">El arquitecto (host) puede reiniciar la simulación.</p>
             <button id="btnNuevoJuegoHost" class="btn" style="border-color: #fff; color: #fff;" onclick="reiniciarPartidaCompleta()">Reiniciar Simulación</button>
             <div id="msgEsperaParticipante" style="color: #fff; font-size: 0.9rem; font-family: monospace;">Esperando recarga del arquitecto...</div>
         </div>
@@ -162,7 +197,7 @@
         <h1>The Absurd Translator</h1>
         
         <div id="pantallaRegistro">
-            <p style="letter-spacing: 1px; color: var(--accent);">DEFINE TU AVATAR EN LA SIMULACIÓN</p>
+            <p style="letter-spacing: 2px; color: var(--accent); font-family: 'Orbitron', sans-serif;">DEFINE TU AVATAR EN LA SIMULACIÓN</p>
             <input type="text" id="inputNombre" placeholder="INGRESA TU ALIAS..." maxlength="12">
             <button class="btn" onclick="registrarJugador()">Inicializar Conexión</button>
         </div>
@@ -173,7 +208,7 @@
             </div>
 
             <div id="pantallaJuego">
-                <p style="letter-spacing: 2px; margin-bottom:0; color: #888;" id="txtRonda">DATOS 1/10</p>
+                <p style="letter-spacing: 3px; margin-bottom:0; color: #6688aa; font-family: 'Orbitron', sans-serif;" id="txtRonda">DATOS 1/10</p>
                 <div class="word" id="pantallaPalabra">CARGANDO...</div>
                 
                 <div id="formularioEnvio">
@@ -182,10 +217,10 @@
                 </div>
             </div>
 
-            <hr id="separador" style="border-color: rgba(0, 255, 65, 0.1); margin: 1.5rem 0;">
+            <hr id="separador" style="border-color: rgba(0, 229, 255, 0.15); margin: 1.5rem 0;">
 
             <div id="pantallaRespuestas">
-                <h3 id="tituloRespuestas" style="letter-spacing: 1px; font-size:1rem; color: #ffffff;">REGISTROS DETECTADOS EN LA RED:</h3>
+                <h3 id="tituloRespuestas" style="letter-spacing: 2px; font-size:1rem; color: #ffffff; font-family: 'Orbitron', sans-serif;">REGISTROS DETECTADOS EN LA RED:</h3>
                 <div class="list-group" id="contenedorRespuestas"></div>
             </div>
 
@@ -209,15 +244,15 @@
             </div>
 
             <div id="adminPanel" class="admin-panel">
-                <p style="color: yellow; font-size: 0.8rem; margin: 0 0 5px 0; font-family: monospace;">💻 PANEL DEL ARQUITECTO</p>
-                <button class="btn" style="border-color: yellow; color: yellow; font-size: 0.8rem; padding: 0.5rem;" id="btnSiguienteAdmin" onclick="pasarSiguienteRonda()">👉 Forzar Siguiente Secuencia</button>
+                <p style="color: #ff9900; font-size: 0.8rem; margin: 0 0 5px 0; font-family: monospace;">💻 PANEL DEL ARQUITECTO</p>
+                <button class="btn" style="border-color: #ff9900; color: #ff9900; font-size: 0.8rem; padding: 0.5rem;" id="btnSiguienteAdmin" onclick="pasarSiguienteRonda()">👉 Forzar Siguiente Secuencia</button>
             </div>
         </div>
     </div>
 
     <script>
-        // === 1. FONDO ANIMADO MATRIX (Canvas) ===
-        const canvas = document.getElementById('matrixCanvas');
+        // === 1. CPU & RAM BUSES ANIMATION (Tron Canvas) ===
+        const canvas = document.getElementById('tronCanvas');
         const ctx = canvas.getContext('2d');
 
         function ajustarCanvas() {
@@ -227,32 +262,108 @@
         ajustarCanvas();
         window.addEventListener('resize', ajustarCanvas);
 
-        const caracteres = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const matrizCaracteres = caracteres.split("");
+        // Simulation nodes and paths
+        const particles = [];
+        const numParticles = 80;
         
-        const tamañoFuente = 16;
-        const columnas = canvas.width / tamañoFuente;
-        const gotas = [];
-        for (let x = 0; x < columnas; x++) { gotas[x] = 1; }
-
-        function dibujarMatrix() {
-            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            ctx.fillStyle = "#0f0"; 
-            ctx.font = tamañoFuente + "px monospace";
-
-            for (let i = 0; i < gotas.length; i++) {
-                const texto = matrizCaracteres[Math.floor(Math.random() * matrizCaracteres.length)];
-                ctx.fillText(texto, i * tamañoFuente, gotas[i] * tamañoFuente);
-
-                if (gotas[i] * tamañoFuente > canvas.height && Math.random() > 0.975) {
-                    gotas[i] = 0;
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // Moving in straight grid lines (horizontal or vertical)
+                this.axis = Math.random() > 0.5 ? 'x' : 'y';
+                this.dir = Math.random() > 0.5 ? 1 : -1;
+                
+                if (this.axis === 'x') {
+                    this.x = this.dir > 0 ? -20 : canvas.width + 20;
+                    this.y = Math.round(Math.random() * (canvas.height / 40)) * 40; // snapped to a grid
+                    this.vx = this.dir * (2 + Math.random() * 4);
+                    this.vy = 0;
+                } else {
+                    this.x = Math.round(Math.random() * (canvas.width / 40)) * 40; // snapped to a grid
+                    this.y = this.dir > 0 ? -20 : canvas.height + 20;
+                    this.vx = 0;
+                    this.vy = this.dir * (2 + Math.random() * 4);
                 }
-                gotas[i]++;
+                
+                this.length = 50 + Math.random() * 100;
+                this.history = [];
+                this.maxLength = 15;
+            }
+            update() {
+                this.history.push({x: this.x, y: this.y});
+                if (this.history.length > this.maxLength) {
+                    this.history.shift();
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Randomly turn 90 degrees occasionally to look like circuitry
+                if (Math.random() < 0.015) {
+                    const speed = Math.abs(this.vx) || Math.abs(this.vy);
+                    if (this.vx !== 0) {
+                        this.vy = Math.random() > 0.5 ? speed : -speed;
+                        this.vx = 0;
+                    } else {
+                        this.vx = Math.random() > 0.5 ? speed : -speed;
+                        this.vy = 0;
+                    }
+                }
+
+                // Reset if it leaves the grid boundary
+                if (this.x < -100 || this.x > canvas.width + 100 || 
+                    this.y < -100 || this.y > canvas.height + 100) {
+                    this.reset();
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#00e5ff';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00e5ff';
+
+                for(let i = 0; i < this.history.length - 1; i++) {
+                    ctx.moveTo(this.history[i].x, this.history[i].y);
+                    ctx.lineTo(this.history[i+1].x, this.history[i+1].y);
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0; // Reset shadow for performance
             }
         }
-        setInterval(dibujarMatrix, 35);
+
+        for (let i = 0; i < numParticles; i++) {
+            particles.push(new Particle());
+        }
+
+        function dibujarTron() {
+            ctx.fillStyle = "rgba(2, 6, 19, 0.2)"; // Trailing effect
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw a subtle background grid
+            ctx.beginPath();
+            ctx.strokeStyle = "rgba(0, 229, 255, 0.05)";
+            ctx.lineWidth = 1;
+            const step = 40;
+            for (let x = 0; x < canvas.width; x += step) {
+                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+            }
+            for (let y = 0; y < canvas.height; y += step) {
+                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+            }
+            ctx.stroke();
+
+            // Update and draw the light cycles/data buses
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(dibujarTron);
+        }
+        dibujarTron();
 
 
         // === 2. BANCO DE PALABRAS ===
@@ -438,8 +549,8 @@
             
             document.getElementById('seccionTiempo').style.display = 'inline-block';
             document.getElementById('seccionTiempo').innerHTML = "SECUENCIA DE INGRESO: <span id='reloj'>30</span>S";
-            document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 65, 0.1)";
-            document.getElementById('seccionTiempo').style.borderColor = "#00ff41"; 
+            document.getElementById('seccionTiempo').style.background = "rgba(0, 229, 255, 0.15)";
+            document.getElementById('seccionTiempo').style.borderColor = "var(--accent)"; 
             document.getElementById('tituloRespuestas').innerText = "REGISTROS DETECTADOS EN LA RED:";
             document.getElementById('tituloRespuestas').style.color = "#ffffff";
 
@@ -488,7 +599,6 @@
         }
 
         function cargarRespuestasParaVotar() {
-            // Usamos .once para que no pinte respuestas viejas de otras rondas.
             database.ref(`partida/rondas/${rondaActual}/respuestas`).once('value', (snapshot) => {
                 const contenedor = document.getElementById('contenedorRespuestas');
                 contenedor.innerHTML = '';
@@ -577,11 +687,9 @@
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            // Solo borramos las rondas y jugadas. No a los jugadores, para que no desaparezcan.
             database.ref('partida/rondas').remove(); 
             prepararNuevasPalabras();
             
-            // Ponemos a 0 los puntos de los jugadores existentes
             database.ref('partida/jugadores').once('value', (snap) => {
                 snap.forEach(child => {
                     database.ref(`partida/jugadores/${child.key}/puntos`).set(0);
