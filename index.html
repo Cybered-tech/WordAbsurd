@@ -1,91 +1,98 @@
 <!DOCTYPE html><html lang="es"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRON: El Traductor Absurdo - Versión 10 Palabras</title>
+    <title>TRON: El Traductor Absurdo - Matrix Edition</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
     <style>
         :root {
-            --bg: #050508;
-            --card: #0d0d13;
-            --accent: #ff2a2a;
-            --accent-glow: rgba(255, 42, 42, 0.6);
-            --text: #e2e8f0;
-            --grid-color: rgba(255, 42, 42, 0.05);
+            --bg: #000000; /* Fondo negro puro */
+            --card: rgba(0, 15, 0, 0.9); /* Tarjetas verde muy oscuro con transparencia */
+            --accent: #00ff41; /* Verde Matrix brillante (Phosphor green) */
+            --accent-glow: rgba(0, 255, 65, 0.6);
+            --text: #c0ffc0; /* Texto verde muy pálido */
+            --grid-color: rgba(0, 255, 65, 0.03);
         }
+        
         body {
-            margin: 0; font-family: 'Segoe UI', sans-serif;
+            margin: 0; font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada */
             background-color: var(--bg);
-            background-image: 
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 30px 30px;
             color: var(--text);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; padding: 20px; box-sizing: border-box;
+            overflow-x: hidden; position: relative;
         }
+
+        /* --- Fondo Animado Matrix --- */
+        #matrixCanvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; /* Detrás de todo */
+            opacity: 0.2; /* Suave para no distraer */
+        }
+        
         .container {
             width: 100%; max-width: 700px;
             background-color: var(--card); padding: 2.5rem;
-            border-radius: 0.5rem; text-align: center;
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 20px var(--accent-glow);
-            position: relative;
+            border-radius: 0; text-align: center; /* Sin bordes redondeados */
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 15px var(--accent-glow);
+            position: relative; z-index: 1; /* Sobre el canvas */
         }
-        .container::before {
-            content: ''; position: absolute; top: -2px; left: -2px;
-            width: 30px; height: 30px; border-top: 5px solid var(--accent); border-left: 5px solid var(--accent);
-        }
-        .container::after {
-            content: ''; position: absolute; bottom: -2px; right: -2px;
-            width: 30px; height: 30px; border-bottom: 5px solid var(--accent); border-right: 5px solid var(--accent);
-        }
+        
+        /* Eliminados los bordes decorativos de las esquinas de Tron */
+
         h1 {
             color: #ffffff; text-transform: uppercase; letter-spacing: 5px;
             font-size: 1.8rem; text-shadow: 0 0 10px var(--accent-glow);
             margin-bottom: 0.5rem;
         }
         .word {
-            font-size: 3rem; font-weight: bold; color: var(--accent);
-            margin: 1rem 0; letter-spacing: 6px;
+            font-size: 3.5rem; font-weight: bold; color: var(--accent);
+            margin: 1rem 0; letter-spacing: 8px;
             text-shadow: 0 0 15px var(--accent-glow);
+            text-transform: uppercase;
         }
         .timer-box {
             font-size: 1.1rem; font-weight: bold; color: #ffffff;
             border: 1px solid var(--accent); padding: 0.5rem; 
-            background: rgba(255, 42, 42, 0.1); display: inline-block;
+            background: rgba(0, 255, 65, 0.1); display: inline-block;
             margin-bottom: 1rem;
         }
         input {
             width: 100%; padding: 1rem; border: 1px solid var(--accent);
-            background: #000000; color: white; box-sizing: border-box;
+            background: #000000; color: #ffffff; box-sizing: border-box;
             font-size: 1rem; margin-bottom: 1rem; text-align: center;
+            font-family: 'Courier New', monospace;
         }
+        input:focus { outline: none; box-shadow: 0 0 10px var(--accent-glow); }
+
         .btn {
-            background-color: var(--accent); color: #ffffff;
-            border: none; padding: 1rem 1.5rem; font-size: 1rem;
+            background-color: transparent; color: var(--accent);
+            border: 1px solid var(--accent); padding: 1rem 1.5rem; font-size: 1rem;
             font-weight: bold; cursor: pointer; width: 100%;
             text-transform: uppercase; letter-spacing: 2px;
+            transition: all 0.2s; font-family: 'Courier New', monospace;
         }
-        .btn:disabled { background-color: #261010; color: #555; cursor: not-allowed; border: 1px solid #441a1a; }
+        .btn:hover { background-color: var(--accent); color: #000000; box-shadow: 0 0 10px var(--accent-glow); }
+        .btn:disabled { border-color: #004400; color: #004400; cursor: not-allowed; }
         
         .list-group { text-align: left; margin-top: 1rem; }
         .list-item {
-            background: rgba(255, 255, 255, 0.02); padding: 1rem;
-            border: 1px solid rgba(255, 42, 42, 0.3); margin-bottom: 0.5rem;
-            cursor: pointer;
+            background: rgba(0, 20, 0, 0.5); padding: 1rem;
+            border: 1px solid rgba(0, 255, 65, 0.2); margin-bottom: 0.5rem;
+            cursor: pointer; transition: background 0.2s;
         }
-        .list-item:hover { background: rgba(255, 42, 42, 0.1); }
-        .voted { border-color: #00ffff !important; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+        .list-item:hover { background: rgba(0, 255, 65, 0.1); border-color: var(--accent); }
+        .voted { border-color: #ffffff !important; box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); color: #fff; }
         
         .grid-final {
             display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 1.5rem;
         }
-        .final-box { padding: 1.5rem; border: 1px solid var(--accent); background: #000; text-align: left;}
+        .final-box { padding: 1.5rem; border: 1px solid var(--accent); background: rgba(0,0,0,0.8); text-align: left;}
         .final-box h4 { margin: 0 0 0.5rem 0; text-transform: uppercase; color: var(--accent); }
-        .real-box { border-color: #00ffff; }
-        .real-box h4 { color: #00ffff; }
+        .real-box { border-color: #ffffff; }
+        .real-box h4 { color: #ffffff; }
         
         .admin-panel {
             margin-top: 15px; padding: 10px; border: 1px dashed yellow;
@@ -94,14 +101,14 @@
 
         .leaderboard {
             margin-top: 1.5rem; padding: 1rem;
-            border: 1px solid rgba(255, 42, 42, 0.2);
-            background: rgba(13, 13, 19, 0.8);
+            border: 1px solid rgba(0, 255, 65, 0.1);
+            background: rgba(0, 10, 0, 0.5);
         }
         .leaderboard h3 { color: #ffffff; margin-top: 0; font-size: 1rem; letter-spacing: 2px;}
         .leaderboard-list { text-align: left; padding: 0; list-style: none; margin: 0; }
         .leaderboard-item {
             display: flex; justify-content: space-between;
-            padding: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.5rem; border-bottom: 1px solid rgba(0, 255, 65, 0.1);
             font-size: 0.9rem;
         }
         .leaderboard-item:last-child { border-bottom: none; }
@@ -109,89 +116,156 @@
 
         #pantallaCorona {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 5, 8, 0.95); z-index: 100;
+            background: rgba(0, 5, 0, 0.95); z-index: 100;
             justify-content: center; align-items: center; flex-direction: column;
         }
         .corona-box {
-            border: 4px solid #00ffff; background: #0d0d13;
+            border: 2px solid #ffffff; background: #000000;
             padding: 3rem; text-align: center; max-width: 500px;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
         }
-        .corona-titulo { color: #00ffff; letter-spacing: 5px; font-size: 2.5rem; margin: 0; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
-        .corona-sub { color: #ffffff; letter-spacing: 2px; font-size: 1.2rem; margin: 1rem 0; }
-        .campeon-nombre { font-size: 3.5rem; font-weight: bold; color: #ff2a2a; text-shadow: 0 0 15px rgba(255, 42, 42, 0.6); margin: 1.5rem 0; text-transform: uppercase; }
+        .corona-titulo { color: #ffffff; letter-spacing: 5px; font-size: 2.5rem; margin: 0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+        .corona-sub { color: var(--text); letter-spacing: 2px; font-size: 1.2rem; margin: 1rem 0; }
+        .campeon-nombre { font-size: 3.5rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); margin: 1.5rem 0; text-transform: uppercase; }
+
+        /* --- Botón de Música Flotante --- */
+        #btnMusica {
+            position: fixed; bottom: 20px; right: 20px;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: rgba(0, 30, 0, 0.8); border: 1px solid var(--accent);
+            color: var(--accent); font-size: 1.5rem; cursor: pointer;
+            z-index: 10; display: flex; justify-content: center; align-items: center;
+            box-shadow: 0 0 10px var(--accent-glow); transition: all 0.3s;
+        }
+        #btnMusica:hover { background: var(--accent); color: #000; }
+        #btnMusica.apagado { border-color: #555; color: #555; box-shadow: none; background: rgba(20,20,20,0.8); }
+
     </style></head><body>
+
+    <canvas id="matrixCanvas"></canvas>
+
+    <button id="btnMusica" onclick="conmutarMusica()" title="Encender/Apagar Música de Fondo">🔊</button>
 
     <div id="pantallaCorona">
         <div class="corona-box">
-            <p class="corona-titulo">FIN DEL JUEGO</p>
-            <p class="corona-sub">EL CAMPEÓN ABSOLUTO DE LA RED ES:</p>
+            <p class="corona-titulo">CONEXIÓN FINALIZADA</p>
+            <p class="corona-sub">EL JUGADOR QUE LOGRÓ DECODIFICAR LA RED ES:</p>
             <div class="campeon-nombre" id="nombreCampeon">---</div>
-            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1.5rem;">El anfitrión puede reiniciar la partida con nuevas palabras.</p>
-            <button id="btnNuevoJuegoHost" class="btn" style="background-color: #00ffff; color: #000; display:none;" onclick="reiniciarPartidaCompleta()">Iniciar Nuevo Juego</button>
-            <div id="msgEsperaParticipante" style="color: #00ffff;">Esperando que el anfitrión inicie una nueva partida...</div>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; font-family: monospace;">El arquitecto (host) puede reiniciar la simulación.</p>
+            <button id="btnNuevoJuegoHost" class="btn" style="border-color: #fff; color: #fff;" onclick="reiniciarPartidaCompleta()">Reiniciar Simulación</button>
+            <div id="msgEsperaParticipante" style="color: #fff; font-size: 0.9rem; font-family: monospace;">Esperando recarga del arquitecto...</div>
         </div>
     </div>
 
     <div class="container">
-        <h1>El Traductor Absurdo</h1>
+        <h1>The Absurd Translator</h1>
         
         <div id="pantallaRegistro">
-            <p style="letter-spacing: 1px;">INGRESA TU IDENTIDAD EN LA RED</p>
-            <input type="text" id="inputNombre" placeholder="TU NOMBRE O ALIAS...">
-            <button class="btn" onclick="registrarJugador()">Entrar al Sistema</button>
+            <p style="letter-spacing: 1px; color: var(--accent);">DEFINE TU AVATAR EN LA SIMULACIÓN</p>
+            <input type="text" id="inputNombre" placeholder="INGRESA TU ALIAS..." maxlength="12">
+            <button class="btn" onclick="registrarJugador()">Inicializar Conexión</button>
         </div>
 
         <div id="contenidoJuego" style="display: none;">
             <div id="seccionTiempo" class="timer-box">
-                TIEMPO DE INGRESO: <span id="reloj">30</span>S
+                SECUENCIA DE INGRESO: <span id="reloj">30</span>S
             </div>
 
             <div id="pantallaJuego">
-                <p style="letter-spacing: 2px; margin-bottom:0;" id="txtRonda">RONDA 1/10</p>
+                <p style="letter-spacing: 2px; margin-bottom:0; color: #888;" id="txtRonda">DATOS 1/10</p>
                 <div class="word" id="pantallaPalabra">CARGANDO...</div>
                 
                 <div id="formularioEnvio">
-                    <input type="text" id="inputDefinicion" placeholder="INGRESA TU DEFINICIÓN ABSURDA...">
+                    <input type="text" id="inputDefinicion" placeholder="INGRESA DECODIFICACIÓN ALTERNATIVA...">
                     <button class="btn" id="btnEnviar" onclick="enviarDefinicion()">Subir a la Red</button>
                 </div>
             </div>
 
-            <hr id="separador" style="border-color: rgba(255, 42, 42, 0.2); margin: 1.5rem 0;">
+            <hr id="separador" style="border-color: rgba(0, 255, 65, 0.1); margin: 1.5rem 0;">
 
             <div id="pantallaRespuestas">
-                <h3 id="tituloRespuestas" style="letter-spacing: 1px; font-size:1rem;">DEFINICIONES EN LA RED:</h3>
+                <h3 id="tituloRespuestas" style="letter-spacing: 1px; font-size:1rem; color: #ffffff;">REGISTROS DETECTADOS EN LA RED:</h3>
                 <div class="list-group" id="contenedorRespuestas"></div>
             </div>
 
             <div id="pantallaFinal" style="display:none;">
                 <div class="grid-final">
                     <div class="final-box">
-                        <h4>Más Votada por el Equipo</h4>
-                        <p id="textoGanador">Cargando...</p>
+                        <h4>Registro más votado</h4>
+                        <p id="textoGanador" style="color: var(--accent);">Cargando...</p>
                     </div>
                     <div class="final-box real-box">
-                        <h4>Definición Correcta</h4>
-                        <p id="textoReal">Definición real aquí.</p>
+                        <h4>Dato Correcto</h4>
+                        <p id="textoReal" style="color: #ffffff;">Definición real aquí.</p>
                     </div>
                 </div>
             </div>
 
             <div class="leaderboard">
-                <h3>MARCADOR DE LA RED</h3>
+                <h3>REGISTRO DE PUNTUACIONES</h3>
                 <ul class="leaderboard-list" id="listaLeaderboard">
-                    </ul>
+                </ul>
             </div>
 
             <div id="adminPanel" class="admin-panel">
-                <p style="color: yellow; font-size: 0.8rem; margin: 0 0 5px 0;">💻 PANEL DEL ANFITRIÓN</p>
-                <button class="btn" style="background: #ffbc42; color: black; font-size: 0.8rem; padding: 0.5rem;" id="btnSiguienteAdmin" onclick="pasarSiguienteRonda()">👉 Pasar a la Siguiente Ronda</button>
+                <p style="color: yellow; font-size: 0.8rem; margin: 0 0 5px 0; font-family: monospace;">💻 PANEL DEL ARQUITECTO</p>
+                <button class="btn" style="border-color: yellow; color: yellow; font-size: 0.8rem; padding: 0.5rem;" id="btnSiguienteAdmin" onclick="pasarSiguienteRonda()">👉 Forzar Siguiente Secuencia</button>
             </div>
         </div>
     </div>
 
     <script>
-        // BANCO ORIGINAL DE 50 PALABRAS
+        // === 1. FONDO ANIMADO MATRIX (Canvas) ===
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Ajustar canvas al tamaño de la ventana
+        function ajustarCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        ajustarCanvas();
+        window.addEventListener('resize', ajustarCanvas);
+
+        // Caracteres: Katakana, Hiragana, Latín, Números
+        const caracteres = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const matrizCaracteres = caracteres.split("");
+        
+        const tamañoFuente = 16;
+        const columnas = canvas.width / tamañoFuente;
+        // Un array para llevar la posición 'y' de cada columna
+        const gotas = [];
+        for (let x = 0; x < columnas; x++) { gotas[x] = 1; }
+
+        function dibujarMatrix() {
+            // Fondo negro semi-transparente para crear el efecto de rastro (fade)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0f0"; // Color verde base de las letras
+            ctx.font = tamañoFuente + "px monospace";
+
+            for (let i = 0; i < gotas.length; i++) {
+                // Elegir un carácter aleatorio
+                const texto = matrizCaracteres[Math.floor(Math.random() * matrizCaracteres.length)];
+                
+                // Dibujar el carácter. got[i]*tamañoFuente es la posición Y.
+                // ctx.fillText(texto, coordenadaX, coordenadaY);
+                ctx.fillText(texto, i * tamañoFuente, gotas[i] * tamañoFuente);
+
+                // Si la gota llega al fondo, reiniciarla aleatoriamente al techo
+                if (gotas[i] * tamañoFuente > canvas.height && Math.random() > 0.975) {
+                    gotas[i] = 0;
+                }
+                // Mover la gota hacia abajo
+                gotas[i]++;
+            }
+        }
+        // Ejecutar la animación a una velocidad smooth
+        setInterval(dibujarMatrix, 35);
+
+
+        // === 2. BANCO DE PALABRAS ===
         const bancoPalabrasCompleto = [
             { p: "YACTURA", r: "Quiebra, daño o pérdida de gran cuantía en los negocios." },
             { p: "PETRICOR", r: "El nombre que recibe el olor a lluvia en suelos secos." },
@@ -245,9 +319,10 @@
             { p: "ZURCIDO", r: "Costura con que se unen los hilos de una tela rota." }
         ];
 
-        let palabrasDeLaPartida = []; // Aquí se guardarán las 10 de la ronda actual
+        let palabrasDeLaPartida = []; 
 
-        // === CONFIGURACIÓN DE FIREBASE ===
+        // === 3. CONFIGURACIÓN DE FIREBASE ===
+        // *** REEMPLAZA ESTO CON TUS CREDENCIALES REALES ***
         const firebaseConfig = {
             apiKey: "AIzaSyDZho01ha6e4Rw02AciO3bR_eV4da_6Zec",
             authDomain: "absurdword.firebaseapp.com",
@@ -261,6 +336,7 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // === 4. VARIABLES DE JUEGO ===
         let rondaActual = 1;
         let tiempo = 45;
         let intervalo = null;
@@ -268,10 +344,17 @@
         let soyHost = false;
         let refRespuestasActual = null; 
 
-        let miID = localStorage.getItem('miID') || "jugador_" + Math.random().toString(36).substr(2, 9);
+        // Identificación local del jugador
+        let miID = localStorage.getItem('miID') || "agent_" + Math.random().toString(36).substr(2, 9);
         let miNombre = localStorage.getItem('miNombre') || "";
         localStorage.setItem('miID', miID);
 
+        // --- Sintetizador de Música de Fondo (Web Audio API) ---
+        let audioContext;
+        let estaSonandoMusica = false;
+        let scheduledNotes = []; // Para detener notas futuras
+
+        // Comprobación inicial de nombre
         if (miNombre !== "") {
             document.getElementById('pantallaRegistro').style.display = 'none';
             document.getElementById('contenidoJuego').style.display = 'block';
@@ -280,11 +363,12 @@
 
         function registrarJugador() {
             const nombre = document.getElementById('inputNombre').value.trim();
-            if (nombre === "") return alert("¡Ingresa un nombre para continuar!");
+            if (nombre === "") return alert("¡El sistema requiere un alias válido!");
             
             miNombre = nombre;
             localStorage.setItem('miNombre', miNombre);
             
+            // Registrar/Actualizar jugador en Firebase
             database.ref(`partida/jugadores/${miID}`).once('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
@@ -295,10 +379,16 @@
 
             document.getElementById('pantallaRegistro').style.display = 'none';
             document.getElementById('contenidoJuego').style.display = 'block';
+            
+            // Intentar arrancar la música automáticamente (los navegadores suelen bloquearlo, por eso el botón flotante)
+            iniciarMusicaSmooth(); 
+            
             inicializarJuego();
         }
 
+        // === 5. LÓGICA CORE DE FIREBASE ===
         function inicializarJuego() {
+            // Gestión de Host (Arquitecto)
             database.ref('partida/host').once('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     soyHost = true;
@@ -306,28 +396,25 @@
                     document.getElementById('adminPanel').style.display = 'block';
                     document.getElementById('btnNuevoJuegoHost').style.display = 'inline-block';
                     document.getElementById('msgEsperaParticipante').style.display = 'none';
+                    // Liberar host si se desconecta
                     database.ref('partida/host').onDisconnect().remove();
                     
-                    // Mezclar y fijar 10 palabras aleatorias en la base de datos
-                    prepararNuevasPalabras();
-                    
+                    prepararNuevasPalabras(); // Mezclar y elegir 10
                     database.ref('partida/ronda').set(1);
                     reseteoDePuntos();
                 }
             });
 
-            // Leer las palabras seleccionadas para esta partida (Sincronizado para todos)
+            // Escuchar palabras de la partida
             database.ref('partida/palabrasActuales').on('value', (snapshot) => {
-                if (snapshot.exists()) {
-                    palabrasDeLaPartida = snapshot.val();
-                }
+                if (snapshot.exists()) { palabrasDeLaPartida = snapshot.val(); }
             });
 
+            // Escuchar cambio de ronda
             database.ref('partida/ronda').on('value', (snapshot) => {
                 const r = snapshot.val();
                 if (r) {
                     rondaActual = r;
-                    // Al llegar a la ronda 11 (Termina la 10), el juego finaliza
                     if (rondaActual > 10) {
                         declararCampeon();
                     } else {
@@ -337,12 +424,14 @@
                 }
             });
 
+            // Escuchar marcador global
             database.ref('partida/jugadores').on('value', (snapshot) => {
                 const lista = document.getElementById('listaLeaderboard');
                 lista.innerHTML = '';
                 let jugadores = [];
                 snapshot.forEach((child) => { jugadores.push(child.val()); });
 
+                // Ordenar por puntos desc
                 jugadores.sort((a, b) => b.puntos - a.puntos);
 
                 jugadores.forEach((jugador) => {
@@ -354,8 +443,9 @@
             });
         }
 
-        // El Host toma 10 palabras al azar del banco de 50
+        // Funciones exclusivas del Host
         function prepararNuevasPalabras() {
+            // Mezclar banco completo y tomar 10
             const mezcladas = [...bancoPalabrasCompleto].sort(() => 0.5 - Math.random());
             const seleccionadas = mezcladas.slice(0, 10);
             database.ref('partida/palabrasActuales').set(seleccionadas);
@@ -369,10 +459,11 @@
             });
         }
 
+        // === 6. FLUJO DE RONDA UI ===
         function cargarRondaUI() {
             clearInterval(intervalo);
             
-            // Esperar que carguen las palabras si aún no bajan de Firebase
+            // Esperar sincronización de palabras si es necesario
             if (palabrasDeLaPartida.length === 0) {
                 setTimeout(cargarRondaUI, 500);
                 return;
@@ -380,7 +471,8 @@
 
             const palabraObj = palabrasDeLaPartida[rondaActual - 1];
             
-            document.getElementById('txtRonda').innerText = `RONDA ${rondaActual}/10`;
+            // Actualizar Interfaz
+            document.getElementById('txtRonda').innerText = `DATOS ${rondaActual}/10`;
             document.getElementById('pantallaPalabra').innerText = palabraObj.p;
             document.getElementById('inputDefinicion').disabled = false;
             document.getElementById('inputDefinicion').value = '';
@@ -393,64 +485,47 @@
             document.getElementById('pantallaRespuestas').style.display = 'block';
             
             document.getElementById('seccionTiempo').style.display = 'inline-block';
-            document.getElementById('seccionTiempo').innerHTML = "TIEMPO DE INGRESO: <span id='reloj'>30</span>S";
-            document.getElementById('seccionTiempo').style.background = "rgba(255, 42, 42, 0.1)";
-            document.getElementById('seccionTiempo').style.borderColor = "#ff2a2a";
-            document.getElementById('tituloRespuestas').innerText = "DEFINICIONES EN LA RED:";
-            document.getElementById('tituloRespuestas').style.color = "#e2e8f0";
+            document.getElementById('seccionTiempo').innerHTML = "SECUENCIA DE INGRESO: <span id='reloj'>30</span>S";
+            document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 65, 0.1)";
+            document.getElementById('seccionTiempo').style.borderColor = var(--accent);
+            document.getElementById('tituloRespuestas').innerText = "REGISTROS DETECTADOS EN LA RED:";
+            document.getElementById('tituloRespuestas').style.color = "#ffffff";
 
-            tiempo = 45; 
+            tiempo = 45; // 30s escribir + 15s votar
             votoEmitido = false;
 
+            // Limpiar escuchas antiguos de respuestas
+            if (refRespuestasActual) { refRespuestasActual.off(); }
+
+            // Lógica de fases (Escritura / Votación)
             intervalo = setInterval(() => {
                 tiempo--;
                 if (tiempo > 15) {
+                    // Fase de Escritura (Muestra tiempo - 15)
                     document.getElementById('reloj').innerText = tiempo - 15;
                 } else if (tiempo <= 15 && tiempo > 0) {
+                    // Fase de Votación (Muestra tiempo real 15 a 0)
                     pasarAVotacion();
                     document.getElementById('reloj').innerText = tiempo;
                 } else if (tiempo <= 0) {
+                    // Fin de ronda
                     clearInterval(intervalo);
                     revelarGanadorLocal();
                 }
             }, 1000);
-
-            if (refRespuestasActual) { refRespuestasActual.off(); }
-
-            refRespuestasActual = database.ref(`partida/rondas/${rondaActual}/respuestas`);
-            refRespuestasActual.on('child_added', (snapshot) => {
-                const data = snapshot.val();
-                const id = snapshot.key;
-                const contenedor = document.getElementById('contenedorRespuestas');
-                
-                const div = document.createElement('div');
-                div.className = 'list-item';
-                div.id = `item-${id}`;
-                div.innerText = data.texto;
-                
-                div.onclick = function() {
-                    if (data.autorId === miID) { alert("¡No puedes votar por tu propia definición!"); return; }
-
-                    if (tiempo <= 15 && tiempo > 0 && !votoEmitido) {
-                        database.ref(`partida/rondas/${rondaActual}/respuestas/${id}/votos`).transaction(v => (v || 0) + 1);
-                        database.ref(`partida/jugadores/${data.autorId}/puntos`).transaction(p => (p || 0) + 1);
-
-                        div.className = 'list-item voted';
-                        votoEmitido = true;
-                        document.querySelectorAll('.list-item').forEach(el => el.style.cursor = 'not-allowed');
-                    }
-                };
-                contenedor.appendChild(div);
-            });
         }
 
         function pasarAVotacion() {
-            document.getElementById('seccionTiempo').innerHTML = "FASE DE VOTACIÓN: <span id='reloj'>15</span>S";
-            document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 255, 0.1)";
-            document.getElementById('seccionTiempo').style.borderColor = "#00ffff";
-            document.getElementById('tituloRespuestas').innerText = "¡HAZ CLIC EN TU FAVORITA PARA VOTAR!";
-            document.getElementById('tituloRespuestas').style.color = "#00ffff";
+            if (document.getElementById('formularioEnvio').style.display === 'none') return; // Ya en votación
+
+            document.getElementById('seccionTiempo').innerHTML = "ANÁLISIS DE VERACIDAD: <span id='reloj'>15</span>S";
+            document.getElementById('seccionTiempo').style.background = "rgba(255, 255, 255, 0.1)";
+            document.getElementById('seccionTiempo').style.borderColor = "#ffffff";
+            document.getElementById('tituloRespuestas').innerText = "¡DETECTA EL REGISTRO CORRECTO!";
+            document.getElementById('tituloRespuestas').style.color = "#ffffff";
             document.getElementById('formularioEnvio').style.display = 'none';
+
+            cargarRespuestasParaVotar();
         }
 
         function enviarDefinicion() {
@@ -459,36 +534,77 @@
 
             database.ref(`partida/rondas/${rondaActual}/respuestas`).push({
                 texto: texto,
-                votos: 0,
                 autorId: miID 
             });
 
             document.getElementById('inputDefinicion').disabled = true;
             document.getElementById('btnEnviar').disabled = true;
-            document.getElementById('btnEnviar').innerText = "ESPERANDO AL EQUIPO...";
+            document.getElementById('btnEnviar').innerText = "REGISTRO SUBIDO. ESPERANDO...";
+        }
+
+        function cargarRespuestasParaVotar() {
+            refRespuestasActual = database.ref(`partida/rondas/${rondaActual}/respuestas`);
+            refRespuestasActual.once('value', (snapshot) => {
+                const contenedor = document.getElementById('contenedorRespuestas');
+                contenedor.innerHTML = '';
+                let respuestasArray = [];
+                
+                // Traer respuestas de jugadores
+                snapshot.forEach((child) => {
+                    respuestasArray.push({ id: child.key, data: child.val() });
+                });
+                
+                // Inyectar la correcta (SISTEMA)
+                const palabraObj = palabrasDeLaPartida[rondaActual - 1];
+                respuestasArray.push({ id: "correcta", data: { texto: palabraObj.r, autorId: "SISTEMA" } });
+
+                // MEZCLAR RESPUESTAS (Shuffling) para camuflar la correcta
+                respuestasArray.sort(() => 0.5 - Math.random());
+
+                respuestasArray.forEach((item) => {
+                    const data = item.data;
+                    const id = item.id;
+                    
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.id = `item-${id}`;
+                    div.innerText = data.texto;
+                    
+                    div.onclick = function() {
+                        // Impedir votar por la propia
+                        if (data.autorId === miID) { alert("Tu avatar no puede auto-validarse."); return; }
+                        if (votoEmitido) return;
+
+                        // Registrar voto visualmente
+                        votoEmitido = true;
+                        div.className = 'list-item voted';
+                        document.querySelectorAll('.list-item').forEach(el => el.style.cursor = 'not-allowed');
+
+                        // Lógica de Puntuación
+                        if (data.autorId === "SISTEMA") {
+                            // Acierta la real: +2 puntos
+                            database.ref(`partida/jugadores/${miID}/puntos`).transaction(p => (p || 0) + 2);
+                            alert("Registro verificado. +2 Puntos de Conexión.");
+                        } else {
+                            // Cae en el engaño: +1 punto para el mentiroso
+                            database.ref(`partida/jugadores/${data.autorId}/puntos`).transaction(p => (p || 0) + 1);
+                            alert("Registro erróneo. Ganas 0 puntos. +1 Punto otorgado al creador de la anomalía.");
+                        }
+                    };
+                    contenedor.appendChild(div);
+                });
+            });
         }
 
         function revelarGanadorLocal() {
-            database.ref(`partida/rondas/${rondaActual}/respuestas`).once('value', (snapshot) => {
-                let maxVotos = -1;
-                let masVotada = "Nadie propuso ninguna definición 🕵️";
-                
-                snapshot.forEach((childSnapshot) => {
-                    const data = childSnapshot.val();
-                    if (data.votos > maxVotos) {
-                        maxVotos = data.votos;
-                        masVotada = data.texto;
-                    }
-                });
-
-                document.getElementById('pantallaJuego').style.display = 'none';
-                document.getElementById('pantallaRespuestas').style.display = 'none';
-                document.getElementById('seccionTiempo').style.display = 'none';
-                
-                document.getElementById('textoGanador').innerText = masVotada;
-                document.getElementById('textoReal').innerText = palabrasDeLaPartida[rondaActual - 1].r;
-                document.getElementById('pantallaFinal').style.display = 'block';
-            });
+            // Mostrar la solución real y reiniciar para la siguiente ronda (o final)
+            document.getElementById('pantallaJuego').style.display = 'none';
+            document.getElementById('pantallaRespuestas').style.display = 'none';
+            document.getElementById('seccionTiempo').style.display = 'none';
+            
+            document.getElementById('textoGanador').innerText = "Análisis completado.";
+            document.getElementById('textoReal').innerText = palabrasDeLaPartida[rondaActual - 1].r;
+            document.getElementById('pantallaFinal').style.display = 'block';
         }
 
         function pasarSiguienteRonda() {
@@ -496,10 +612,13 @@
             database.ref('partida/ronda').set(rondaActual + 1);
         }
 
+        // === 7. FINAL DEL JUEGO Y PREMIACIÓN ===
         function declararCampeon() {
+            detenerMusicaBackground(); // Parar música smooth al ganar
+
             database.ref('partida/jugadores').once('value', (snapshot) => {
                 let maxPuntos = -1;
-                let campeon = "Sin identificar";
+                let campeon = "Anónimo";
 
                 snapshot.forEach((child) => {
                     const j = child.val();
@@ -512,43 +631,156 @@
                 document.getElementById('nombreCampeon').innerText = campeon;
                 document.getElementById('pantallaCorona').style.display = 'flex';
                 
-                reproducirSonidoVictoria();
+                reproducirSonidoVictoriaRetro(); // Sonido 8-bit corto
             });
         }
 
-        // Reinicio completo desde el Host
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            
-            // 1. Limpiar respuestas anteriores
+            // Limpieza total y reinicio
             database.ref('partida/rondas').remove();
-            // 2. Elegir un nuevo set de 10 palabras
-            prepararNuevasPalabras();
-            // 3. Resetear puntuación de todos los jugadores
+            prepararNuevasPalabras(); // Mezclar nuevas 10
             reseteoDePuntos();
-            // 4. Volver a la Ronda 1 (Esto sacará a todos de la pantalla de corona)
-            database.ref('partida/ronda').set(1);
+            database.ref('partida/ronda').set(1); // Sacar a todos de la pantalla final
+            
+            // Los jugadores deberán reactivar la música manualmente si lo desean
         }
 
-        function reproducirSonidoVictoria() {
+        // --- Sintetizador de Sonido de Victoria (8-bit) ---
+        function reproducirSonidoVictoriaRetro() {
             try {
-                const context = new (window.AudioContext || window.webkitAudioContext)();
-                function sonarNota(frecuencia, tiempoInicio, duracion) {
-                    const osc = context.createOscillator();
-                    const gain = context.createGain();
-                    osc.type = 'square';
-                    osc.frequency.value = frecuencia;
-                    gain.gain.setValueAtTime(0.1, context.currentTime + tiempoInicio);
-                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + tiempoInicio + duracion);
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                function sonar(freq, start, dur) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square'; // Sonido retro
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime + start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
                     osc.connect(gain);
-                    gain.connect(context.destination);
-                    osc.start(context.currentTime + tiempoInicio);
-                    osc.stop(context.currentTime + tiempoInicio + duracion);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + start);
+                    osc.stop(ctx.currentTime + start + dur);
                 }
-                sonarNota(523.25, 0.0, 0.2); 
-                sonarNota(659.25, 0.15, 0.2); 
-                sonarNota(783.99, 0.3, 0.2); 
-                sonarNota(1046.50, 0.45, 0.5); 
-            } catch (e) { console.log("Audio bloqueado por el navegador."); }
+                // Arpegio Do Mayor rápido
+                sonar(523.25, 0.0, 0.15); // Do5
+                sonar(659.25, 0.1, 0.15); // Mi5
+                sonar(783.99, 0.2, 0.15); // Sol5
+                sonar(1046.50, 0.3, 0.4); // Do6
+            } catch (e) {}
         }
-    </script></body></html>
+
+
+        // === 8. SINTETIZADOR DE MÚSICA SMOOTH BACKGROUND (Web Audio API) ===
+        // Genera una progresión armónica lo-fi/deep house ambiental por código
+
+        function conmutarMusica() {
+            const btn = document.getElementById('btnMusica');
+            if (!estaSonandoMusica) {
+                iniciarMusicaSmooth();
+                btn.innerText = "🔇";
+                btn.classList.remove('apagado');
+            } else {
+                detenerMusicaBackground();
+                btn.innerText = "🔊";
+                btn.classList.add('apagado');
+            }
+        }
+
+        function iniciarMusicaSmooth() {
+            if (estaSonandoMusica) return;
+            estaSonandoMusica = true;
+            
+            try {
+                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const bpm = 90; // Ritmo relajado
+                const tRonda = (60 / bpm) * 4; // Tiempo de un compás de 4 tiempos
+                let tiempoCompas = audioContext.currentTime + 0.1;
+
+                // Definir Progresión de Acordes (Smooth/Jazz chords)
+                // Lam9 - Rem9 - Sol13 - DoMaj9
+                const acordes = [
+                    [110.00, 130.81, 164.81, 196.00, 246.94], // Am9 (La2, Do3, Mi3, Sol3, Si3)
+                    [146.83, 174.61, 220.00, 261.63, 329.63], // Dm9
+                    [196.00, 246.94, 293.66, 349.23, 440.00], // G13
+                    [130.81, 164.81, 196.00, 246.94, 329.63]  // Cmaj9
+                ];
+
+                let indiceAcorde = 0;
+
+                // Función recursiva para programar el siguiente compás (bucle infinito suave)
+                function programarSiguienteCompas() {
+                    if (!estaSonandoMusica) return;
+
+                    const notasAcorde = acordes[indiceAcorde];
+                    const duracionAcorde = tRonda * 0.95; // Un poco de silencio entre acordes
+
+                    // Programar notas del acorde (Pad atmosférico)
+                    notasAcorde.forEach(freq => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        
+                        osc.type = 'triangle'; // Onda suave
+                        osc.frequency.value = freq;
+
+                        // Envolvente suave (Fade in / Fade out)
+                        gain.gain.setValueAtTime(0, tiempoCompas);
+                        gain.gain.linearRampToValueAtTime(0.015, tiempoCompas + tRonda * 0.2); // Volumen bajo
+                        gain.gain.setValueAtTime(0.015, tiempoCompas + tRonda * 0.8);
+                        gain.gain.linearRampToValueAtTime(0, tiempoCompas + tRonda);
+
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        
+                        osc.start(tiempoCompas);
+                        osc.stop(tiempoCompas + tRonda);
+                        
+                        // Guardar referencia para poder detener si se apaga
+                        scheduledNotes.push(osc); 
+                    });
+
+                    // Programar un bajo suave en el tiempo 1
+                    const oscBass = audioContext.createOscillator();
+                    const gainBass = audioContext.createGain();
+                    oscBass.type = 'sine'; // Onda pura
+                    oscBass.frequency.value = notasAcorde[0] / 2; // Una octava más abajo
+                    gainBass.gain.setValueAtTime(0, tiempoCompas);
+                    gainBass.gain.linearRampToValueAtTime(0.03, tiempoCompas + 0.1);
+                    gainBass.gain.exponentialRampToValueAtTime(0.001, tiempoCompas + tRonda * 0.8);
+                    oscBass.connect(gainBass);
+                    gainBass.connect(audioContext.destination);
+                    oscBass.start(tiempoCompas);
+                    oscBass.stop(tiempoCompas + tRonda * 0.8);
+                    scheduledNotes.push(oscBass);
+
+                    // Avanzar tiempo y acorde
+                    tiempoCompas += tRonda;
+                    indiceAcorde = (indiceAcorde + 1) % acordes.length;
+
+                    // Programar el siguiente chequeo justo antes de que termine este compás
+                    // Usamos setTimeout para no saturar el hilo principal, pero confiamos en el tiempo preciso de AudioContext
+                    setTimeout(programarSiguienteCompas, (tRonda - 0.1) * 1000);
+                }
+
+                // Arrancar el bucle
+                programarSiguienteCompas();
+
+            } catch (e) {
+                console.log("Audio Web API no soportada o bloqueada.");
+                estaSonandoMusica = false;
+            }
+        }
+
+        function detenerMusicaBackground() {
+            estaSonandoMusica = false;
+            // Detener inmediatamente todas las notas programadas
+            scheduledNotes.forEach(note => {
+                try { note.stop(); } catch(e) {}
+            });
+            scheduledNotes = [];
+        }
+
+    </script>
+</body>
+</html>
