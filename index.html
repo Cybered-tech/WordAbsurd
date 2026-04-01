@@ -332,15 +332,13 @@
         let intervalo = null;
         let votoEmitido = false;
         let soyHost = false;
-        let refRespuestasActual = null; 
 
         let miID = "agent_" + Math.random().toString(36).substr(2, 9);
-        let miNombre = ""; // Siempre vacío al recargar la página
+        let miNombre = ""; 
 
         // Al iniciar, mostramos SIEMPRE la pantalla de registro
         document.getElementById('pantallaRegistro').style.display = 'block';
         document.getElementById('contenidoJuego').style.display = 'none';
-
 
         function registrarJugador() {
             const nombre = document.getElementById('inputNombre').value.trim();
@@ -348,12 +346,13 @@
             
             miNombre = nombre;
             
-            database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
-
-            document.getElementById('pantallaRegistro').style.display = 'none';
-            document.getElementById('contenidoJuego').style.display = 'block';
-            
-            inicializarJuego();
+            // Registramos y luego leemos el estado del juego
+            database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 })
+            .then(() => {
+                document.getElementById('pantallaRegistro').style.display = 'none';
+                document.getElementById('contenidoJuego').style.display = 'block';
+                inicializarJuego();
+            });
         }
 
         // === 5. LÓGICA CORE DE FIREBASE ===
@@ -367,9 +366,8 @@
                     document.getElementById('msgEsperaParticipante').style.display = 'none';
                     database.ref('partida/host').onDisconnect().remove();
                     
-                    // PURGA TOTAL de miembros y datos previos para evitar fantasmas
-                    database.ref('partida/jugadores').remove();
-                    
+                    // Solo el Host limpia TODO al inicio de una nueva simulación
+                    database.ref('partida/rondas').remove();
                     prepararNuevasPalabras(); 
                     database.ref('partida/ronda').set(1);
                 }
@@ -418,22 +416,11 @@
             database.ref('partida/palabrasActuales').set(seleccionadas);
         }
 
-        function reseteoDePuntos() {
-            database.ref('partida/jugadores').once('value', (snap) => {
-                snap.forEach(child => {
-                    database.ref(`partida/jugadores/${child.key}/puntos`).set(0);
-                });
-            });
-        }
-
         // === 6. FLUJO DE RONDA UI ===
         function cargarRondaUI() {
             clearInterval(intervalo);
             
-            if (palabrasDeLaPartida.length === 0) {
-                setTimeout(cargarRondaUI, 500);
-                return;
-            }
+            if (palabrasDeLaPartida.length === 0) return;
 
             const palabraObj = palabrasDeLaPartida[rondaActual - 1];
             
@@ -458,8 +445,6 @@
 
             tiempo = 45; 
             votoEmitido = false;
-
-            if (refRespuestasActual) { refRespuestasActual.off(); }
 
             intervalo = setInterval(() => {
                 tiempo--;
@@ -503,12 +488,11 @@
         }
 
         function cargarRespuestasParaVotar() {
-            refRespuestasActual = database.ref(`partida/rondas/${rondaActual}/respuestas`);
-            refRespuestasActual.once('value', (snapshot) => {
+            // Usamos .once para que no pinte respuestas viejas de otras rondas.
+            database.ref(`partida/rondas/${rondaActual}/respuestas`).once('value', (snapshot) => {
                 const contenedor = document.getElementById('contenedorRespuestas');
                 contenedor.innerHTML = '';
                 let respuestasArray = [];
-                
                 let textosRegistrados = new Set();
                 
                 snapshot.forEach((child) => {
@@ -593,10 +577,17 @@
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            database.ref('partida/rondas').set(null); 
-            // Purga de miembros también al reiniciar
-            database.ref('partida/jugadores').remove();
+            // Solo borramos las rondas y jugadas. No a los jugadores, para que no desaparezcan.
+            database.ref('partida/rondas').remove(); 
             prepararNuevasPalabras();
+            
+            // Ponemos a 0 los puntos de los jugadores existentes
+            database.ref('partida/jugadores').once('value', (snap) => {
+                snap.forEach(child => {
+                    database.ref(`partida/jugadores/${child.key}/puntos`).set(0);
+                });
+            });
+
             database.ref('partida/ronda').set(1);
         }
 
