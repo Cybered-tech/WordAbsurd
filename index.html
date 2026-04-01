@@ -182,7 +182,7 @@
 </head>
 <body>
 
-    <audio id="musicaFondo" loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3"></audio>
+    <audio id="musicaFondo" loop src="https://actions.google.com/sounds/v1/ambiences/ambient_hum_air_conditioner.ogg"></audio>
 
     <canvas id="tronCanvas"></canvas>
 
@@ -314,7 +314,6 @@
         });
 
         moveLines();
-
 
         // === 2. BANCO COMPLETO DE 50 PALABRAS ===
         const bancoPalabrasCompleto = [
@@ -532,7 +531,15 @@
 
         function enviarDefinicion() {
             const texto = document.getElementById('inputDefinicion').value.trim();
-            if (texto === "" || texto === "undefined" || texto === "Hello" || texto === "confieso") return;
+            
+            // Filtro para impedir que se suban vacíos, "undefined", "Edu", etc.
+            if (
+                texto === "" || 
+                texto.toLowerCase() === "undefined" || 
+                texto.toLowerCase() === "edu" || 
+                texto === "Hello" || 
+                texto === "confieso"
+            ) return;
 
             database.ref(`partida/rondas/${rondaActual}/respuestas`).push({
                 texto: texto,
@@ -555,10 +562,11 @@
                     const info = child.val();
                     const textLimpio = info.texto ? info.texto.trim() : "";
                     
-                    // Verificación de datos fantasma
+                    // --- FILTRO DE ENTRADAS FANTASMA O NO DESEADAS ---
                     if (
                         textLimpio !== "" && 
-                        textLimpio !== "undefined" && 
+                        textLimpio.toLowerCase() !== "undefined" && 
+                        textLimpio.toLowerCase() !== "edu" && 
                         textLimpio !== "Hello" && 
                         textLimpio !== "confieso" &&
                         !textosRegistrados.has(textLimpio.toLowerCase())
