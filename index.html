@@ -219,7 +219,6 @@
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Ajustar canvas al tamaño de la ventana
         function ajustarCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -227,41 +226,31 @@
         ajustarCanvas();
         window.addEventListener('resize', ajustarCanvas);
 
-        // Caracteres: Katakana, Hiragana, Latín, Números
         const caracteres = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const matrizCaracteres = caracteres.split("");
         
         const tamañoFuente = 16;
         const columnas = canvas.width / tamañoFuente;
-        // Un array para llevar la posición 'y' de cada columna
         const gotas = [];
         for (let x = 0; x < columnas; x++) { gotas[x] = 1; }
 
         function dibujarMatrix() {
-            // Fondo negro semi-transparente para crear el efecto de rastro (fade)
             ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = "#0f0"; // Color verde base de las letras
+            ctx.fillStyle = "#0f0"; 
             ctx.font = tamañoFuente + "px monospace";
 
             for (let i = 0; i < gotas.length; i++) {
-                // Elegir un carácter aleatorio
                 const texto = matrizCaracteres[Math.floor(Math.random() * matrizCaracteres.length)];
-                
-                // Dibujar el carácter. got[i]*tamañoFuente es la posición Y.
-                // ctx.fillText(texto, coordenadaX, coordenadaY);
                 ctx.fillText(texto, i * tamañoFuente, gotas[i] * tamañoFuente);
 
-                // Si la gota llega al fondo, reiniciarla aleatoriamente al techo
                 if (gotas[i] * tamañoFuente > canvas.height && Math.random() > 0.975) {
                     gotas[i] = 0;
                 }
-                // Mover la gota hacia abajo
                 gotas[i]++;
             }
         }
-        // Ejecutar la animación a una velocidad smooth
         setInterval(dibujarMatrix, 35);
 
 
@@ -322,7 +311,6 @@
         let palabrasDeLaPartida = []; 
 
         // === 3. CONFIGURACIÓN DE FIREBASE ===
-        // *** REEMPLAZA ESTO CON TUS CREDENCIALES REALES ***
         const firebaseConfig = {
             apiKey: "AIzaSyDZho01ha6e4Rw02AciO3bR_eV4da_6Zec",
             authDomain: "absurdword.firebaseapp.com",
@@ -344,17 +332,10 @@
         let soyHost = false;
         let refRespuestasActual = null; 
 
-        // Identificación local del jugador
         let miID = localStorage.getItem('miID') || "agent_" + Math.random().toString(36).substr(2, 9);
         let miNombre = localStorage.getItem('miNombre') || "";
         localStorage.setItem('miID', miID);
 
-        // --- Sintetizador de Música de Fondo (Web Audio API) ---
-        let audioContext;
-        let estaSonandoMusica = false;
-        let scheduledNotes = []; // Para detener notas futuras
-
-        // Comprobación inicial de nombre
         if (miNombre !== "") {
             document.getElementById('pantallaRegistro').style.display = 'none';
             document.getElementById('contenidoJuego').style.display = 'block';
@@ -368,7 +349,6 @@
             miNombre = nombre;
             localStorage.setItem('miNombre', miNombre);
             
-            // Registrar/Actualizar jugador en Firebase
             database.ref(`partida/jugadores/${miID}`).once('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
@@ -380,15 +360,11 @@
             document.getElementById('pantallaRegistro').style.display = 'none';
             document.getElementById('contenidoJuego').style.display = 'block';
             
-            // Intentar arrancar la música automáticamente (los navegadores suelen bloquearlo, por eso el botón flotante)
-            iniciarMusicaSmooth(); 
-            
             inicializarJuego();
         }
 
         // === 5. LÓGICA CORE DE FIREBASE ===
         function inicializarJuego() {
-            // Gestión de Host (Arquitecto)
             database.ref('partida/host').once('value', (snapshot) => {
                 if (!snapshot.exists()) {
                     soyHost = true;
@@ -396,21 +372,22 @@
                     document.getElementById('adminPanel').style.display = 'block';
                     document.getElementById('btnNuevoJuegoHost').style.display = 'inline-block';
                     document.getElementById('msgEsperaParticipante').style.display = 'none';
-                    // Liberar host si se desconecta
                     database.ref('partida/host').onDisconnect().remove();
                     
-                    prepararNuevasPalabras(); // Mezclar y elegir 10
+                    prepararNuevasPalabras(); 
                     database.ref('partida/ronda').set(1);
                     reseteoDePuntos();
                 }
             });
 
-            // Escuchar palabras de la partida
             database.ref('partida/palabrasActuales').on('value', (snapshot) => {
-                if (snapshot.exists()) { palabrasDeLaPartida = snapshot.val(); }
+                if (snapshot.exists()) { 
+                    palabrasDeLaPartida = snapshot.val(); 
+                    // Una vez que llegan las palabras, cargamos la interfaz
+                    cargarRondaUI();
+                }
             });
 
-            // Escuchar cambio de ronda
             database.ref('partida/ronda').on('value', (snapshot) => {
                 const r = snapshot.val();
                 if (r) {
@@ -424,14 +401,12 @@
                 }
             });
 
-            // Escuchar marcador global
             database.ref('partida/jugadores').on('value', (snapshot) => {
                 const lista = document.getElementById('listaLeaderboard');
                 lista.innerHTML = '';
                 let jugadores = [];
                 snapshot.forEach((child) => { jugadores.push(child.val()); });
 
-                // Ordenar por puntos desc
                 jugadores.sort((a, b) => b.puntos - a.puntos);
 
                 jugadores.forEach((jugador) => {
@@ -443,9 +418,7 @@
             });
         }
 
-        // Funciones exclusivas del Host
         function prepararNuevasPalabras() {
-            // Mezclar banco completo y tomar 10
             const mezcladas = [...bancoPalabrasCompleto].sort(() => 0.5 - Math.random());
             const seleccionadas = mezcladas.slice(0, 10);
             database.ref('partida/palabrasActuales').set(seleccionadas);
@@ -463,7 +436,7 @@
         function cargarRondaUI() {
             clearInterval(intervalo);
             
-            // Esperar sincronización de palabras si es necesario
+            // Si las palabras no han llegado de Firebase, esperamos medio segundo
             if (palabrasDeLaPartida.length === 0) {
                 setTimeout(cargarRondaUI, 500);
                 return;
@@ -471,7 +444,6 @@
 
             const palabraObj = palabrasDeLaPartida[rondaActual - 1];
             
-            // Actualizar Interfaz
             document.getElementById('txtRonda').innerText = `DATOS ${rondaActual}/10`;
             document.getElementById('pantallaPalabra').innerText = palabraObj.p;
             document.getElementById('inputDefinicion').disabled = false;
@@ -487,28 +459,23 @@
             document.getElementById('seccionTiempo').style.display = 'inline-block';
             document.getElementById('seccionTiempo').innerHTML = "SECUENCIA DE INGRESO: <span id='reloj'>30</span>S";
             document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 65, 0.1)";
-            document.getElementById('seccionTiempo').style.borderColor = var(--accent);
+            document.getElementById('seccionTiempo').style.borderColor = "#00ff41"; // Corregido el CSS aquí
             document.getElementById('tituloRespuestas').innerText = "REGISTROS DETECTADOS EN LA RED:";
             document.getElementById('tituloRespuestas').style.color = "#ffffff";
 
-            tiempo = 45; // 30s escribir + 15s votar
+            tiempo = 45; 
             votoEmitido = false;
 
-            // Limpiar escuchas antiguos de respuestas
             if (refRespuestasActual) { refRespuestasActual.off(); }
 
-            // Lógica de fases (Escritura / Votación)
             intervalo = setInterval(() => {
                 tiempo--;
                 if (tiempo > 15) {
-                    // Fase de Escritura (Muestra tiempo - 15)
                     document.getElementById('reloj').innerText = tiempo - 15;
                 } else if (tiempo <= 15 && tiempo > 0) {
-                    // Fase de Votación (Muestra tiempo real 15 a 0)
                     pasarAVotacion();
                     document.getElementById('reloj').innerText = tiempo;
                 } else if (tiempo <= 0) {
-                    // Fin de ronda
                     clearInterval(intervalo);
                     revelarGanadorLocal();
                 }
@@ -516,7 +483,7 @@
         }
 
         function pasarAVotacion() {
-            if (document.getElementById('formularioEnvio').style.display === 'none') return; // Ya en votación
+            if (document.getElementById('formularioEnvio').style.display === 'none') return; 
 
             document.getElementById('seccionTiempo').innerHTML = "ANÁLISIS DE VERACIDAD: <span id='reloj'>15</span>S";
             document.getElementById('seccionTiempo').style.background = "rgba(255, 255, 255, 0.1)";
@@ -549,16 +516,13 @@
                 contenedor.innerHTML = '';
                 let respuestasArray = [];
                 
-                // Traer respuestas de jugadores
                 snapshot.forEach((child) => {
                     respuestasArray.push({ id: child.key, data: child.val() });
                 });
                 
-                // Inyectar la correcta (SISTEMA)
                 const palabraObj = palabrasDeLaPartida[rondaActual - 1];
                 respuestasArray.push({ id: "correcta", data: { texto: palabraObj.r, autorId: "SISTEMA" } });
 
-                // MEZCLAR RESPUESTAS (Shuffling) para camuflar la correcta
                 respuestasArray.sort(() => 0.5 - Math.random());
 
                 respuestasArray.forEach((item) => {
@@ -571,22 +535,17 @@
                     div.innerText = data.texto;
                     
                     div.onclick = function() {
-                        // Impedir votar por la propia
                         if (data.autorId === miID) { alert("Tu avatar no puede auto-validarse."); return; }
                         if (votoEmitido) return;
 
-                        // Registrar voto visualmente
                         votoEmitido = true;
                         div.className = 'list-item voted';
                         document.querySelectorAll('.list-item').forEach(el => el.style.cursor = 'not-allowed');
 
-                        // Lógica de Puntuación
                         if (data.autorId === "SISTEMA") {
-                            // Acierta la real: +2 puntos
                             database.ref(`partida/jugadores/${miID}/puntos`).transaction(p => (p || 0) + 2);
                             alert("Registro verificado. +2 Puntos de Conexión.");
                         } else {
-                            // Cae en el engaño: +1 punto para el mentiroso
                             database.ref(`partida/jugadores/${data.autorId}/puntos`).transaction(p => (p || 0) + 1);
                             alert("Registro erróneo. Ganas 0 puntos. +1 Punto otorgado al creador de la anomalía.");
                         }
@@ -597,7 +556,6 @@
         }
 
         function revelarGanadorLocal() {
-            // Mostrar la solución real y reiniciar para la siguiente ronda (o final)
             document.getElementById('pantallaJuego').style.display = 'none';
             document.getElementById('pantallaRespuestas').style.display = 'none';
             document.getElementById('seccionTiempo').style.display = 'none';
@@ -614,8 +572,6 @@
 
         // === 7. FINAL DEL JUEGO Y PREMIACIÓN ===
         function declararCampeon() {
-            detenerMusicaBackground(); // Parar música smooth al ganar
-
             database.ref('partida/jugadores').once('value', (snapshot) => {
                 let maxPuntos = -1;
                 let campeon = "Anónimo";
@@ -630,157 +586,19 @@
 
                 document.getElementById('nombreCampeon').innerText = campeon;
                 document.getElementById('pantallaCorona').style.display = 'flex';
-                
-                reproducirSonidoVictoriaRetro(); // Sonido 8-bit corto
             });
         }
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            // Limpieza total y reinicio
             database.ref('partida/rondas').remove();
-            prepararNuevasPalabras(); // Mezclar nuevas 10
+            prepararNuevasPalabras();
             reseteoDePuntos();
-            database.ref('partida/ronda').set(1); // Sacar a todos de la pantalla final
-            
-            // Los jugadores deberán reactivar la música manualmente si lo desean
+            database.ref('partida/ronda').set(1);
         }
 
-        // --- Sintetizador de Sonido de Victoria (8-bit) ---
-        function reproducirSonidoVictoriaRetro() {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                function sonar(freq, start, dur) {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'square'; // Sonido retro
-                    osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime + start);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(ctx.currentTime + start);
-                    osc.stop(ctx.currentTime + start + dur);
-                }
-                // Arpegio Do Mayor rápido
-                sonar(523.25, 0.0, 0.15); // Do5
-                sonar(659.25, 0.1, 0.15); // Mi5
-                sonar(783.99, 0.2, 0.15); // Sol5
-                sonar(1046.50, 0.3, 0.4); // Do6
-            } catch (e) {}
-        }
-
-
-        // === 8. SINTETIZADOR DE MÚSICA SMOOTH BACKGROUND (Web Audio API) ===
-        // Genera una progresión armónica lo-fi/deep house ambiental por código
-
-        function conmutarMusica() {
-            const btn = document.getElementById('btnMusica');
-            if (!estaSonandoMusica) {
-                iniciarMusicaSmooth();
-                btn.innerText = "🔇";
-                btn.classList.remove('apagado');
-            } else {
-                detenerMusicaBackground();
-                btn.innerText = "🔊";
-                btn.classList.add('apagado');
-            }
-        }
-
-        function iniciarMusicaSmooth() {
-            if (estaSonandoMusica) return;
-            estaSonandoMusica = true;
-            
-            try {
-                if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                const bpm = 90; // Ritmo relajado
-                const tRonda = (60 / bpm) * 4; // Tiempo de un compás de 4 tiempos
-                let tiempoCompas = audioContext.currentTime + 0.1;
-
-                // Definir Progresión de Acordes (Smooth/Jazz chords)
-                // Lam9 - Rem9 - Sol13 - DoMaj9
-                const acordes = [
-                    [110.00, 130.81, 164.81, 196.00, 246.94], // Am9 (La2, Do3, Mi3, Sol3, Si3)
-                    [146.83, 174.61, 220.00, 261.63, 329.63], // Dm9
-                    [196.00, 246.94, 293.66, 349.23, 440.00], // G13
-                    [130.81, 164.81, 196.00, 246.94, 329.63]  // Cmaj9
-                ];
-
-                let indiceAcorde = 0;
-
-                // Función recursiva para programar el siguiente compás (bucle infinito suave)
-                function programarSiguienteCompas() {
-                    if (!estaSonandoMusica) return;
-
-                    const notasAcorde = acordes[indiceAcorde];
-                    const duracionAcorde = tRonda * 0.95; // Un poco de silencio entre acordes
-
-                    // Programar notas del acorde (Pad atmosférico)
-                    notasAcorde.forEach(freq => {
-                        const osc = audioContext.createOscillator();
-                        const gain = audioContext.createGain();
-                        
-                        osc.type = 'triangle'; // Onda suave
-                        osc.frequency.value = freq;
-
-                        // Envolvente suave (Fade in / Fade out)
-                        gain.gain.setValueAtTime(0, tiempoCompas);
-                        gain.gain.linearRampToValueAtTime(0.015, tiempoCompas + tRonda * 0.2); // Volumen bajo
-                        gain.gain.setValueAtTime(0.015, tiempoCompas + tRonda * 0.8);
-                        gain.gain.linearRampToValueAtTime(0, tiempoCompas + tRonda);
-
-                        osc.connect(gain);
-                        gain.connect(audioContext.destination);
-                        
-                        osc.start(tiempoCompas);
-                        osc.stop(tiempoCompas + tRonda);
-                        
-                        // Guardar referencia para poder detener si se apaga
-                        scheduledNotes.push(osc); 
-                    });
-
-                    // Programar un bajo suave en el tiempo 1
-                    const oscBass = audioContext.createOscillator();
-                    const gainBass = audioContext.createGain();
-                    oscBass.type = 'sine'; // Onda pura
-                    oscBass.frequency.value = notasAcorde[0] / 2; // Una octava más abajo
-                    gainBass.gain.setValueAtTime(0, tiempoCompas);
-                    gainBass.gain.linearRampToValueAtTime(0.03, tiempoCompas + 0.1);
-                    gainBass.gain.exponentialRampToValueAtTime(0.001, tiempoCompas + tRonda * 0.8);
-                    oscBass.connect(gainBass);
-                    gainBass.connect(audioContext.destination);
-                    oscBass.start(tiempoCompas);
-                    oscBass.stop(tiempoCompas + tRonda * 0.8);
-                    scheduledNotes.push(oscBass);
-
-                    // Avanzar tiempo y acorde
-                    tiempoCompas += tRonda;
-                    indiceAcorde = (indiceAcorde + 1) % acordes.length;
-
-                    // Programar el siguiente chequeo justo antes de que termine este compás
-                    // Usamos setTimeout para no saturar el hilo principal, pero confiamos en el tiempo preciso de AudioContext
-                    setTimeout(programarSiguienteCompas, (tRonda - 0.1) * 1000);
-                }
-
-                // Arrancar el bucle
-                programarSiguienteCompas();
-
-            } catch (e) {
-                console.log("Audio Web API no soportada o bloqueada.");
-                estaSonandoMusica = false;
-            }
-        }
-
-        function detenerMusicaBackground() {
-            estaSonandoMusica = false;
-            // Detener inmediatamente todas las notas programadas
-            scheduledNotes.forEach(note => {
-                try { note.stop(); } catch(e) {}
-            });
-            scheduledNotes = [];
-        }
-
+        // Funciones de utilidad para evitar que truene si faltaban
+        function conmutarMusica() { alert("Música en desarrollo"); }
     </script>
 </body>
 </html>
