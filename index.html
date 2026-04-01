@@ -334,30 +334,21 @@
         let soyHost = false;
         let refRespuestasActual = null; 
 
-        let miID = localStorage.getItem('miID') || "agent_" + Math.random().toString(36).substr(2, 9);
-        let miNombre = localStorage.getItem('miNombre') || "";
-        localStorage.setItem('miID', miID);
+        let miID = "agent_" + Math.random().toString(36).substr(2, 9);
+        let miNombre = ""; // Siempre vacío al recargar la página
 
-        if (miNombre !== "") {
-            document.getElementById('pantallaRegistro').style.display = 'none';
-            document.getElementById('contenidoJuego').style.display = 'block';
-            inicializarJuego();
-        }
+        // Al iniciar, mostramos SIEMPRE la pantalla de registro
+        document.getElementById('pantallaRegistro').style.display = 'block';
+        document.getElementById('contenidoJuego').style.display = 'none';
+
 
         function registrarJugador() {
             const nombre = document.getElementById('inputNombre').value.trim();
             if (nombre === "") return alert("¡El sistema requiere un alias válido!");
             
             miNombre = nombre;
-            localStorage.setItem('miNombre', miNombre);
             
-            database.ref(`partida/jugadores/${miID}`).once('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
-                } else {
-                    database.ref(`partida/jugadores/${miID}/nombre`).set(miNombre);
-                }
-            });
+            database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
 
             document.getElementById('pantallaRegistro').style.display = 'none';
             document.getElementById('contenidoJuego').style.display = 'block';
@@ -516,13 +507,25 @@
                 contenedor.innerHTML = '';
                 let respuestasArray = [];
                 
+                // Limpiar textos repetidos (evita duplicidad si alguien spamea)
+                let textosRegistrados = new Set();
+                
                 snapshot.forEach((child) => {
-                    respuestasArray.push({ id: child.key, data: child.val() });
+                    const info = child.val();
+                    if (!textosRegistrados.has(info.texto.toLowerCase())) {
+                        respuestasArray.push({ id: child.key, data: info });
+                        textosRegistrados.add(info.texto.toLowerCase());
+                    }
                 });
                 
                 const palabraObj = palabrasDeLaPartida[rondaActual - 1];
-                respuestasArray.push({ id: "correcta", data: { texto: palabraObj.r, autorId: "SISTEMA" } });
+                
+                // Solo empujar la correcta si no fue escrita ya por alguien
+                if (!textosRegistrados.has(palabraObj.r.toLowerCase())) {
+                    respuestasArray.push({ id: "correcta", data: { texto: palabraObj.r, autorId: "SISTEMA" } });
+                }
 
+                // Aleatorizar para que no gane siempre el mismo lugar
                 respuestasArray.sort(() => 0.5 - Math.random());
 
                 respuestasArray.forEach((item) => {
@@ -591,30 +594,21 @@
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            // CORRECCIÓN AQUÍ: Ahora borra TODO el nodo de rondas para eliminar las respuestas viejas.
             database.ref('partida/rondas').set(null); 
             prepararNuevasPalabras();
             reseteoDePuntos();
             database.ref('partida/ronda').set(1);
         }
 
-        // === 8. LÓGICA DE AUDIO (REPARADA SIN BLOQUEOS) ===
-        let musicaIniciada = false;
-
+        // === 8. LÓGICA DE AUDIO (SIN REPRODUCCIÓN AUTOMÁTICA) ===
         function conmutarMusica() {
             const audio = document.getElementById('musicaFondo');
             const btn = document.getElementById('btnMusica');
             
-            if (!musicaIniciada || audio.paused) {
-                audio.play().then(() => {
-                    btn.innerText = "🔊";
-                    btn.classList.remove('apagado');
-                    musicaIniciada = true;
-                }).catch(error => {
-                    // SE ELIMINÓ EL ALERT BLOQUEANTE
-                    console.log("Reproducción automática prevenida por el navegador.");
-                    btn.innerText = "🔇 (Toca aquí)";
-                });
+            if (audio.paused) {
+                audio.play();
+                btn.innerText = "🔊";
+                btn.classList.remove('apagado');
             } else {
                 audio.pause();
                 btn.innerText = "🔇";
