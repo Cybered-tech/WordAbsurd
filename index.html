@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="es"><head>
+<!DOCTYPE html>
+<html lang="es">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRON: El Traductor Absurdo - Grid Edition</title>
@@ -10,11 +12,11 @@
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;500&display=swap');
 
         :root {
-            --bg: #020613; /* Deep dark blue instead of pitch black */
-            --card: rgba(4, 12, 36, 0.85); /* Tech card background */
-            --accent: #00e5ff; /* Tron Electric Blue */
+            --bg: #050b14; 
+            --card: rgba(4, 12, 36, 0.85); 
+            --accent: #00e5ff; 
             --accent-glow: rgba(0, 229, 255, 0.6);
-            --text: #c2f3ff; /* Very pale blue text */
+            --text: #c2f3ff; 
             --grid-color: rgba(0, 229, 255, 0.1);
         }
         
@@ -25,14 +27,17 @@
             color: var(--text);
             display: flex; justify-content: center; align-items: center;
             min-height: 100vh; padding: 20px; box-sizing: border-box;
-            overflow-x: hidden; position: relative;
+            overflow: hidden; position: relative;
         }
 
-        /* --- CPU & RAM Data Bus Background --- */
         #tronCanvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh;
             z-index: -1;
-            opacity: 0.7;
+            background-color: #050b14;
         }
         
         .container {
@@ -162,7 +167,6 @@
         .corona-sub { color: var(--text); letter-spacing: 2px; font-size: 1.2rem; margin: 1rem 0; }
         .campeon-nombre { font-family: 'Orbitron', sans-serif; font-size: 3.5rem; font-weight: bold; color: var(--accent); text-shadow: 0 0 20px var(--accent-glow); margin: 1.5rem 0; text-transform: uppercase; }
 
-        /* --- Botón de Música Flotante --- */
         #btnMusica {
             position: fixed; bottom: 20px; right: 20px;
             width: 50px; height: 50px; border-radius: 50%;
@@ -174,7 +178,9 @@
         #btnMusica:hover { background: var(--accent); color: #000; }
         #btnMusica.apagado { border-color: #555; color: #555; box-shadow: none; background: rgba(20,20,20,0.8); }
 
-    </style></head><body>
+    </style>
+</head>
+<body>
 
     <audio id="musicaFondo" loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3"></audio>
 
@@ -251,122 +257,66 @@
     </div>
 
     <script>
-        // === 1. CPU & RAM BUSES ANIMATION (Tron Canvas) ===
+        // === 1. FONDO DE LÍNEAS 3D DINÁMICAS ===
         const canvas = document.getElementById('tronCanvas');
         const ctx = canvas.getContext('2d');
 
-        function ajustarCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        ajustarCanvas();
-        window.addEventListener('resize', ajustarCanvas);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        // Simulation nodes and paths
-        const particles = [];
-        const numParticles = 80;
-        
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                // Moving in straight grid lines (horizontal or vertical)
-                this.axis = Math.random() > 0.5 ? 'x' : 'y';
-                this.dir = Math.random() > 0.5 ? 1 : -1;
-                
-                if (this.axis === 'x') {
-                    this.x = this.dir > 0 ? -20 : canvas.width + 20;
-                    this.y = Math.round(Math.random() * (canvas.height / 40)) * 40; // snapped to a grid
-                    this.vx = this.dir * (2 + Math.random() * 4);
-                    this.vy = 0;
-                } else {
-                    this.x = Math.round(Math.random() * (canvas.width / 40)) * 40; // snapped to a grid
-                    this.y = this.dir > 0 ? -20 : canvas.height + 20;
-                    this.vx = 0;
-                    this.vy = this.dir * (2 + Math.random() * 4);
-                }
-                
-                this.length = 50 + Math.random() * 100;
-                this.history = [];
-                this.maxLength = 15;
-            }
-            update() {
-                this.history.push({x: this.x, y: this.y});
-                if (this.history.length > this.maxLength) {
-                    this.history.shift();
-                }
+        const lines = [];
+        const numLines = 150;
 
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Randomly turn 90 degrees occasionally to look like circuitry
-                if (Math.random() < 0.015) {
-                    const speed = Math.abs(this.vx) || Math.abs(this.vy);
-                    if (this.vx !== 0) {
-                        this.vy = Math.random() > 0.5 ? speed : -speed;
-                        this.vx = 0;
-                    } else {
-                        this.vx = Math.random() > 0.5 ? speed : -speed;
-                        this.vy = 0;
-                    }
-                }
-
-                // Reset if it leaves the grid boundary
-                if (this.x < -100 || this.x > canvas.width + 100 || 
-                    this.y < -100 || this.y > canvas.height + 100) {
-                    this.reset();
-                }
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = '#00e5ff';
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = '#00e5ff';
-
-                for(let i = 0; i < this.history.length - 1; i++) {
-                    ctx.moveTo(this.history[i].x, this.history[i].y);
-                    ctx.lineTo(this.history[i+1].x, this.history[i+1].y);
-                }
-                ctx.stroke();
-                ctx.shadowBlur = 0; // Reset shadow for performance
-            }
+        for (let i = 0; i < numLines; i++) {
+            lines.push({
+                x: Math.random() * canvas.width - canvas.width / 2,
+                y: Math.random() * canvas.height - canvas.height / 2,
+                z: Math.random() * canvas.width,
+                color: Math.random() > 0.4 ? '#00e5ff' : '#0055ff' 
+            });
         }
 
-        for (let i = 0; i < numParticles; i++) {
-            particles.push(new Particle());
-        }
-
-        function dibujarTron() {
-            ctx.fillStyle = "rgba(2, 6, 19, 0.2)"; // Trailing effect
+        function moveLines() {
+            ctx.fillStyle = 'rgba(5, 11, 20, 0.3)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw a subtle background grid
-            ctx.beginPath();
-            ctx.strokeStyle = "rgba(0, 229, 255, 0.05)";
-            ctx.lineWidth = 1;
-            const step = 40;
-            for (let x = 0; x < canvas.width; x += step) {
-                ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
-            }
-            for (let y = 0; y < canvas.height; y += step) {
-                ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
-            }
-            ctx.stroke();
+            for (let i = 0; i < numLines; i++) {
+                let l = lines[i];
+                l.z -= 6; 
 
-            // Update and draw the light cycles/data buses
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+                if (l.z <= 0) {
+                    l.z = canvas.width; 
+                    l.x = Math.random() * canvas.width - canvas.width / 2;
+                    l.y = Math.random() * canvas.height - canvas.height / 2;
+                }
 
-            requestAnimationFrame(dibujarTron);
+                const k = 128.0 / l.z;
+                const px = l.x * k + canvas.width / 2;
+                const py = l.y * k + canvas.height / 2;
+
+                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                    const size = (1 - l.z / canvas.width) * 4; 
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fillStyle = l.color;
+                    ctx.shadowBlur = size * 3;
+                    ctx.shadowColor = l.color;
+                    ctx.fill();
+                    ctx.shadowBlur = 0; 
+                }
+            }
+            requestAnimationFrame(moveLines);
         }
-        dibujarTron();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        moveLines();
 
 
-        // === 2. BANCO DE PALABRAS ===
+        // === 2. BANCO COMPLETO DE 50 PALABRAS ===
         const bancoPalabrasCompleto = [
             { p: "YACTURA", r: "Quiebra, daño o pérdida de gran cuantía en los negocios." },
             { p: "PETRICOR", r: "El nombre que recibe el olor a lluvia en suelos secos." },
@@ -433,7 +383,6 @@
             appId: "1:481986891272:web:b7c26ffd43365768aacbbd"
         };
 
-        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -447,7 +396,6 @@
         let miID = "agent_" + Math.random().toString(36).substr(2, 9);
         let miNombre = ""; 
 
-        // Al iniciar, mostramos SIEMPRE la pantalla de registro
         document.getElementById('pantallaRegistro').style.display = 'block';
         document.getElementById('contenidoJuego').style.display = 'none';
 
@@ -457,7 +405,6 @@
             
             miNombre = nombre;
             
-            // Registramos y luego leemos el estado del juego
             database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 })
             .then(() => {
                 document.getElementById('pantallaRegistro').style.display = 'none';
@@ -477,7 +424,6 @@
                     document.getElementById('msgEsperaParticipante').style.display = 'none';
                     database.ref('partida/host').onDisconnect().remove();
                     
-                    // Solo el Host limpia TODO al inicio de una nueva simulación
                     database.ref('partida/rondas').remove();
                     prepararNuevasPalabras(); 
                     database.ref('partida/ronda').set(1);
@@ -586,7 +532,7 @@
 
         function enviarDefinicion() {
             const texto = document.getElementById('inputDefinicion').value.trim();
-            if (texto === "") return;
+            if (texto === "" || texto === "undefined" || texto === "Hello" || texto === "confieso") return;
 
             database.ref(`partida/rondas/${rondaActual}/respuestas`).push({
                 texto: texto,
@@ -607,9 +553,18 @@
                 
                 snapshot.forEach((child) => {
                     const info = child.val();
-                    if (!textosRegistrados.has(info.texto.toLowerCase())) {
+                    const textLimpio = info.texto ? info.texto.trim() : "";
+                    
+                    // Verificación de datos fantasma
+                    if (
+                        textLimpio !== "" && 
+                        textLimpio !== "undefined" && 
+                        textLimpio !== "Hello" && 
+                        textLimpio !== "confieso" &&
+                        !textosRegistrados.has(textLimpio.toLowerCase())
+                    ) {
                         respuestasArray.push({ id: child.key, data: info });
-                        textosRegistrados.add(info.texto.toLowerCase());
+                        textosRegistrados.add(textLimpio.toLowerCase());
                     }
                 });
                 
@@ -657,21 +612,30 @@
             document.getElementById('seccionTiempo').style.display = 'none';
             
             document.getElementById('textoGanador').innerText = "Análisis completado.";
-            document.getElementById('textoReal').innerText = palabrasDeLaPartida[rondaActual - 1].r;
+            const palabraObj = palabrasDeLaPartida[rondaActual - 1];
+            document.getElementById('textoReal').innerText = palabraObj.r;
             document.getElementById('pantallaFinal').style.display = 'block';
+
+            if (soyHost) {
+                setTimeout(() => {
+                    pasarSiguienteRonda();
+                }, 5000);
+            }
         }
 
         function pasarSiguienteRonda() {
-            if (!soyHost) return;
-            database.ref('partida/ronda').set(rondaActual + 1);
+            if (rondaActual < 10) {
+                database.ref('partida/ronda').set(rondaActual + 1);
+            } else {
+                declararCampeon();
+            }
         }
 
-        // === 7. FINAL DEL JUEGO Y PREMIACIÓN ===
         function declararCampeon() {
             database.ref('partida/jugadores').once('value', (snapshot) => {
                 let maxPuntos = -1;
-                let campeon = "Anónimo";
-
+                let campeon = "Nadie";
+                
                 snapshot.forEach((child) => {
                     const j = child.val();
                     if (j.puntos > maxPuntos) {
@@ -687,31 +651,30 @@
 
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
-            database.ref('partida/rondas').remove(); 
-            prepararNuevasPalabras();
-            
-            database.ref('partida/jugadores').once('value', (snap) => {
-                snap.forEach(child => {
+            database.ref('partida/jugadores').once('value', (snapshot) => {
+                snapshot.forEach((child) => {
                     database.ref(`partida/jugadores/${child.key}/puntos`).set(0);
                 });
+                database.ref('partida/rondas').remove();
+                prepararNuevasPalabras();
+                database.ref('partida/ronda').set(1);
             });
-
-            database.ref('partida/ronda').set(1);
         }
 
-        // === 8. LÓGICA DE AUDIO (SIN REPRODUCCIÓN AUTOMÁTICA) ===
+        const audio = document.getElementById("musicaFondo");
+        const btnM = document.getElementById("btnMusica");
+
         function conmutarMusica() {
-            const audio = document.getElementById('musicaFondo');
-            const btn = document.getElementById('btnMusica');
-            
             if (audio.paused) {
                 audio.play();
-                btn.innerText = "🔊";
-                btn.classList.remove('apagado');
+                btnM.innerText = "🔊";
+                btnM.classList.remove("apagado");
             } else {
                 audio.pause();
-                btn.innerText = "🔇";
-                btn.classList.add('apagado');
+                btnM.innerText = "🔇";
+                btnM.classList.add("apagado");
             }
         }
-    </script></body></html>
+    </script>
+</body>
+</html>
