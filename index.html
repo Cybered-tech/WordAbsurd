@@ -1,0 +1,554 @@
+<!DOCTYPE html><html lang="es"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRON: El Traductor Absurdo - Versión 10 Palabras</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg: #050508;
+            --card: #0d0d13;
+            --accent: #ff2a2a;
+            --accent-glow: rgba(255, 42, 42, 0.6);
+            --text: #e2e8f0;
+            --grid-color: rgba(255, 42, 42, 0.05);
+        }
+        body {
+            margin: 0; font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 30px 30px;
+            color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px; box-sizing: border-box;
+        }
+        .container {
+            width: 100%; max-width: 700px;
+            background-color: var(--card); padding: 2.5rem;
+            border-radius: 0.5rem; text-align: center;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+            position: relative;
+        }
+        .container::before {
+            content: ''; position: absolute; top: -2px; left: -2px;
+            width: 30px; height: 30px; border-top: 5px solid var(--accent); border-left: 5px solid var(--accent);
+        }
+        .container::after {
+            content: ''; position: absolute; bottom: -2px; right: -2px;
+            width: 30px; height: 30px; border-bottom: 5px solid var(--accent); border-right: 5px solid var(--accent);
+        }
+        h1 {
+            color: #ffffff; text-transform: uppercase; letter-spacing: 5px;
+            font-size: 1.8rem; text-shadow: 0 0 10px var(--accent-glow);
+            margin-bottom: 0.5rem;
+        }
+        .word {
+            font-size: 3rem; font-weight: bold; color: var(--accent);
+            margin: 1rem 0; letter-spacing: 6px;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+        .timer-box {
+            font-size: 1.1rem; font-weight: bold; color: #ffffff;
+            border: 1px solid var(--accent); padding: 0.5rem; 
+            background: rgba(255, 42, 42, 0.1); display: inline-block;
+            margin-bottom: 1rem;
+        }
+        input {
+            width: 100%; padding: 1rem; border: 1px solid var(--accent);
+            background: #000000; color: white; box-sizing: border-box;
+            font-size: 1rem; margin-bottom: 1rem; text-align: center;
+        }
+        .btn {
+            background-color: var(--accent); color: #ffffff;
+            border: none; padding: 1rem 1.5rem; font-size: 1rem;
+            font-weight: bold; cursor: pointer; width: 100%;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .btn:disabled { background-color: #261010; color: #555; cursor: not-allowed; border: 1px solid #441a1a; }
+        
+        .list-group { text-align: left; margin-top: 1rem; }
+        .list-item {
+            background: rgba(255, 255, 255, 0.02); padding: 1rem;
+            border: 1px solid rgba(255, 42, 42, 0.3); margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+        .list-item:hover { background: rgba(255, 42, 42, 0.1); }
+        .voted { border-color: #00ffff !important; box-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+        
+        .grid-final {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 1.5rem;
+        }
+        .final-box { padding: 1.5rem; border: 1px solid var(--accent); background: #000; text-align: left;}
+        .final-box h4 { margin: 0 0 0.5rem 0; text-transform: uppercase; color: var(--accent); }
+        .real-box { border-color: #00ffff; }
+        .real-box h4 { color: #00ffff; }
+        
+        .admin-panel {
+            margin-top: 15px; padding: 10px; border: 1px dashed yellow;
+            background: rgba(255,255,0,0.05); display: none;
+        }
+
+        .leaderboard {
+            margin-top: 1.5rem; padding: 1rem;
+            border: 1px solid rgba(255, 42, 42, 0.2);
+            background: rgba(13, 13, 19, 0.8);
+        }
+        .leaderboard h3 { color: #ffffff; margin-top: 0; font-size: 1rem; letter-spacing: 2px;}
+        .leaderboard-list { text-align: left; padding: 0; list-style: none; margin: 0; }
+        .leaderboard-item {
+            display: flex; justify-content: space-between;
+            padding: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+        }
+        .leaderboard-item:last-child { border-bottom: none; }
+        .leaderboard-item span.points { color: var(--accent); font-weight: bold; }
+
+        #pantallaCorona {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 5, 8, 0.95); z-index: 100;
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .corona-box {
+            border: 4px solid #00ffff; background: #0d0d13;
+            padding: 3rem; text-align: center; max-width: 500px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+        .corona-titulo { color: #00ffff; letter-spacing: 5px; font-size: 2.5rem; margin: 0; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+        .corona-sub { color: #ffffff; letter-spacing: 2px; font-size: 1.2rem; margin: 1rem 0; }
+        .campeon-nombre { font-size: 3.5rem; font-weight: bold; color: #ff2a2a; text-shadow: 0 0 15px rgba(255, 42, 42, 0.6); margin: 1.5rem 0; text-transform: uppercase; }
+    </style></head><body>
+
+    <div id="pantallaCorona">
+        <div class="corona-box">
+            <p class="corona-titulo">FIN DEL JUEGO</p>
+            <p class="corona-sub">EL CAMPEÓN ABSOLUTO DE LA RED ES:</p>
+            <div class="campeon-nombre" id="nombreCampeon">---</div>
+            <p style="color: #888; font-size: 0.9rem; margin-bottom: 1.5rem;">El anfitrión puede reiniciar la partida con nuevas palabras.</p>
+            <button id="btnNuevoJuegoHost" class="btn" style="background-color: #00ffff; color: #000; display:none;" onclick="reiniciarPartidaCompleta()">Iniciar Nuevo Juego</button>
+            <div id="msgEsperaParticipante" style="color: #00ffff;">Esperando que el anfitrión inicie una nueva partida...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>El Traductor Absurdo</h1>
+        
+        <div id="pantallaRegistro">
+            <p style="letter-spacing: 1px;">INGRESA TU IDENTIDAD EN LA RED</p>
+            <input type="text" id="inputNombre" placeholder="TU NOMBRE O ALIAS...">
+            <button class="btn" onclick="registrarJugador()">Entrar al Sistema</button>
+        </div>
+
+        <div id="contenidoJuego" style="display: none;">
+            <div id="seccionTiempo" class="timer-box">
+                TIEMPO DE INGRESO: <span id="reloj">30</span>S
+            </div>
+
+            <div id="pantallaJuego">
+                <p style="letter-spacing: 2px; margin-bottom:0;" id="txtRonda">RONDA 1/10</p>
+                <div class="word" id="pantallaPalabra">CARGANDO...</div>
+                
+                <div id="formularioEnvio">
+                    <input type="text" id="inputDefinicion" placeholder="INGRESA TU DEFINICIÓN ABSURDA...">
+                    <button class="btn" id="btnEnviar" onclick="enviarDefinicion()">Subir a la Red</button>
+                </div>
+            </div>
+
+            <hr id="separador" style="border-color: rgba(255, 42, 42, 0.2); margin: 1.5rem 0;">
+
+            <div id="pantallaRespuestas">
+                <h3 id="tituloRespuestas" style="letter-spacing: 1px; font-size:1rem;">DEFINICIONES EN LA RED:</h3>
+                <div class="list-group" id="contenedorRespuestas"></div>
+            </div>
+
+            <div id="pantallaFinal" style="display:none;">
+                <div class="grid-final">
+                    <div class="final-box">
+                        <h4>Más Votada por el Equipo</h4>
+                        <p id="textoGanador">Cargando...</p>
+                    </div>
+                    <div class="final-box real-box">
+                        <h4>Definición Correcta</h4>
+                        <p id="textoReal">Definición real aquí.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="leaderboard">
+                <h3>MARCADOR DE LA RED</h3>
+                <ul class="leaderboard-list" id="listaLeaderboard">
+                    </ul>
+            </div>
+
+            <div id="adminPanel" class="admin-panel">
+                <p style="color: yellow; font-size: 0.8rem; margin: 0 0 5px 0;">💻 PANEL DEL ANFITRIÓN</p>
+                <button class="btn" style="background: #ffbc42; color: black; font-size: 0.8rem; padding: 0.5rem;" id="btnSiguienteAdmin" onclick="pasarSiguienteRonda()">👉 Pasar a la Siguiente Ronda</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // BANCO ORIGINAL DE 50 PALABRAS
+        const bancoPalabrasCompleto = [
+            { p: "YACTURA", r: "Quiebra, daño o pérdida de gran cuantía en los negocios." },
+            { p: "PETRICOR", r: "El nombre que recibe el olor a lluvia en suelos secos." },
+            { p: "GISTE", r: "La espuma que se forma en la superficie de la cerveza." },
+            { p: "ACICATE", r: "Incentivo o estímulo que mueve a hacer algo con más rapidez." },
+            { p: "SAPENCO", r: "Persona que es muy astuta, pícara o despierta." },
+            { p: "FLÉBIL", r: "Digno de ser llorado o lamentable." },
+            { p: "ORZAYA", r: "Mujer que se dedica a cuidar niños, niñera." },
+            { p: "VAGUADA", r: "Línea que marca la parte más honda de un valle por donde corren las aguas." },
+            { p: "SABALÓN", r: "Persona de cuerpo grande, pesada y de movimientos torpes." },
+            { p: "INANE", r: "Inútil, vano, fútil o que carece de importancia." },
+            { p: "MELIFLUO", r: "Que tiene un sonido suave, dulce y sumamente delicado." },
+            { p: "ZAFIO", r: "Persona que es grosera o tosca en sus modales o falta de tacto." },
+            { p: "VERBORREA", r: "Exceso de palabras al hablar que carece de sentido o sustancia." },
+            { p: "TÁCITO", r: "Que no se expresa formalmente pero se sobreentiende o se infiere." },
+            { p: "UBICUO", r: "Que está presente a un mismo tiempo en todas partes." },
+            { p: "QUIMERA", r: "Sueño o ilusión que es producto de la imaginación y que es imposible." },
+            { p: "ÓBICE", r: "Obstáculo o impedimento para la consecución de un fin." },
+            { p: "NEFELIBATA", r: "Persona soñadora que no se apercibe de la realidad." },
+            { p: "LÁBIL", r: "Que se desliza, se cae o se destruye con facilidad." },
+            { p: "HIRSUTO", r: "Disperso y duro; se dice especialmente del pelo o de las barbas." },
+            { p: "FARRAGO", r: "Conjunto de cosas o ideas desordenadas e inconexas." },
+            { p: "DILOGÍA", r: "Uso de una palabra con dos significados distintos dentro de una misma frase." },
+            { p: "COADYUVAR", r: "Contribuir o ayudar a la consecución de una cosa o resultado." },
+            { p: "BARRUNTAR", r: "Prever o presentir algo por alguna señal o indicio." },
+            { p: "ALQUERÍA", r: "Finca rústica con casa de labor y otros edificios." },
+            { p: "ZURUMBÁTICO", r: "Atolondrado, aturdido o que ha quedado medio tonto." },
+            { p: "ALIPORI", r: "Vergüenza ajena. Sensación de bochorno por lo que hace otro." },
+            { p: "BÁSULIS", r: "Cosas sin valor o de desecho." },
+            { p: "CACHIVACHE", r: "Utensilio u objeto arrinconado por inútil." },
+            { p: "DELETÉREO", r: "Mortífero, venenoso o destructivo." },
+            { p: "ESBIRRO", r: "Persona que ejecuta ciegamente las órdenes de otra por dinero." },
+            { p: "FÉFERE", r: "Trasto viejo o cacharro de cocina." },
+            { p: "GARRULO", r: "Persona rústica, chabacana o que habla de forma estridente." },
+            { p: "HEBDOMADARIO", r: "Que sucede o se repite cada semana." },
+            { p: "IGNOTO", r: "No conocido ni descubierto." },
+            { p: "JÁBALE", r: "Cierto tipo de red de pesca antigua." },
+            { p: "KIRIE", r: "Canto o rezo de la liturgia que dice 'Señor, ten piedad'." },
+            { p: "LICAÓN", r: "Mamífero carnívoro africano parecido a la hiena." },
+            { p: "MAGÍN", r: "Imaginación o inteligencia de una persona." },
+            { p: "NOSOCOMIO", r: "Establecimiento hospitalario para enfermos." },
+            { p: "OJERIZA", r: "Sentimiento de antipatía u hostilidad hacia algo o alguien." },
+            { p: "PANACEA", r: "Remedio o solución que sirve para resolver cualquier problema." },
+            { p: "QUORUM", r: "Número de personas necesario para que se tome un acuerdo válido." },
+            { p: "RECOLETO", r: "Lugar apartado, solitario y silencioso." },
+            { p: "SINCIPUCIO", r: "Parte superior de la cabeza, coronilla." },
+            { p: "TREMEDAL", r: "Terreno pantanoso cubierto de césped que retiembla al pisarlo." },
+            { p: "UXORICIDIO", r: "Muerte causada a la mujer por su marido." },
+            { p: "VÁSTAGO", r: "Hijo, descendiente o brote de una planta." },
+            { p: "YATAGÁN", r: "Especie de sable o alfanje usado por los orientales." },
+            { p: "ZURCIDO", r: "Costura con que se unen los hilos de una tela rota." }
+        ];
+
+        let palabrasDeLaPartida = []; // Aquí se guardarán las 10 de la ronda actual
+
+        // === CONFIGURACIÓN DE FIREBASE ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyDZho01ha6e4Rw02AciO3bR_eV4da_6Zec",
+            authDomain: "absurdword.firebaseapp.com",
+            databaseURL: "https://absurdword-default-rtdb.firebaseio.com",
+            projectId: "absurdword",
+            storageBucket: "absurdword.appspot.com",
+            messagingSenderId: "481986891272",
+            appId: "1:481986891272:web:b7c26ffd43365768aacbbd"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let rondaActual = 1;
+        let tiempo = 45;
+        let intervalo = null;
+        let votoEmitido = false;
+        let soyHost = false;
+        let refRespuestasActual = null; 
+
+        let miID = localStorage.getItem('miID') || "jugador_" + Math.random().toString(36).substr(2, 9);
+        let miNombre = localStorage.getItem('miNombre') || "";
+        localStorage.setItem('miID', miID);
+
+        if (miNombre !== "") {
+            document.getElementById('pantallaRegistro').style.display = 'none';
+            document.getElementById('contenidoJuego').style.display = 'block';
+            inicializarJuego();
+        }
+
+        function registrarJugador() {
+            const nombre = document.getElementById('inputNombre').value.trim();
+            if (nombre === "") return alert("¡Ingresa un nombre para continuar!");
+            
+            miNombre = nombre;
+            localStorage.setItem('miNombre', miNombre);
+            
+            database.ref(`partida/jugadores/${miID}`).once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    database.ref(`partida/jugadores/${miID}`).set({ nombre: miNombre, puntos: 0 });
+                } else {
+                    database.ref(`partida/jugadores/${miID}/nombre`).set(miNombre);
+                }
+            });
+
+            document.getElementById('pantallaRegistro').style.display = 'none';
+            document.getElementById('contenidoJuego').style.display = 'block';
+            inicializarJuego();
+        }
+
+        function inicializarJuego() {
+            database.ref('partida/host').once('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    soyHost = true;
+                    database.ref('partida/host').set(true);
+                    document.getElementById('adminPanel').style.display = 'block';
+                    document.getElementById('btnNuevoJuegoHost').style.display = 'inline-block';
+                    document.getElementById('msgEsperaParticipante').style.display = 'none';
+                    database.ref('partida/host').onDisconnect().remove();
+                    
+                    // Mezclar y fijar 10 palabras aleatorias en la base de datos
+                    prepararNuevasPalabras();
+                    
+                    database.ref('partida/ronda').set(1);
+                    reseteoDePuntos();
+                }
+            });
+
+            // Leer las palabras seleccionadas para esta partida (Sincronizado para todos)
+            database.ref('partida/palabrasActuales').on('value', (snapshot) => {
+                if (snapshot.exists()) {
+                    palabrasDeLaPartida = snapshot.val();
+                }
+            });
+
+            database.ref('partida/ronda').on('value', (snapshot) => {
+                const r = snapshot.val();
+                if (r) {
+                    rondaActual = r;
+                    // Al llegar a la ronda 11 (Termina la 10), el juego finaliza
+                    if (rondaActual > 10) {
+                        declararCampeon();
+                    } else {
+                        document.getElementById('pantallaCorona').style.display = 'none';
+                        cargarRondaUI();
+                    }
+                }
+            });
+
+            database.ref('partida/jugadores').on('value', (snapshot) => {
+                const lista = document.getElementById('listaLeaderboard');
+                lista.innerHTML = '';
+                let jugadores = [];
+                snapshot.forEach((child) => { jugadores.push(child.val()); });
+
+                jugadores.sort((a, b) => b.puntos - a.puntos);
+
+                jugadores.forEach((jugador) => {
+                    const li = document.createElement('li');
+                    li.className = 'leaderboard-item';
+                    li.innerHTML = `<span>${jugador.nombre}</span> <span class="points">${jugador.puntos} PTS</span>`;
+                    lista.appendChild(li);
+                });
+            });
+        }
+
+        // El Host toma 10 palabras al azar del banco de 50
+        function prepararNuevasPalabras() {
+            const mezcladas = [...bancoPalabrasCompleto].sort(() => 0.5 - Math.random());
+            const seleccionadas = mezcladas.slice(0, 10);
+            database.ref('partida/palabrasActuales').set(seleccionadas);
+        }
+
+        function reseteoDePuntos() {
+            database.ref('partida/jugadores').once('value', (snap) => {
+                snap.forEach(child => {
+                    database.ref(`partida/jugadores/${child.key}/puntos`).set(0);
+                });
+            });
+        }
+
+        function cargarRondaUI() {
+            clearInterval(intervalo);
+            
+            // Esperar que carguen las palabras si aún no bajan de Firebase
+            if (palabrasDeLaPartida.length === 0) {
+                setTimeout(cargarRondaUI, 500);
+                return;
+            }
+
+            const palabraObj = palabrasDeLaPartida[rondaActual - 1];
+            
+            document.getElementById('txtRonda').innerText = `RONDA ${rondaActual}/10`;
+            document.getElementById('pantallaPalabra').innerText = palabraObj.p;
+            document.getElementById('inputDefinicion').disabled = false;
+            document.getElementById('inputDefinicion').value = '';
+            document.getElementById('btnEnviar').disabled = false;
+            document.getElementById('btnEnviar').innerText = "Subir a la Red";
+            document.getElementById('formularioEnvio').style.display = 'block';
+            document.getElementById('contenedorRespuestas').innerHTML = '';
+            document.getElementById('pantallaFinal').style.display = 'none';
+            document.getElementById('pantallaJuego').style.display = 'block';
+            document.getElementById('pantallaRespuestas').style.display = 'block';
+            
+            document.getElementById('seccionTiempo').style.display = 'inline-block';
+            document.getElementById('seccionTiempo').innerHTML = "TIEMPO DE INGRESO: <span id='reloj'>30</span>S";
+            document.getElementById('seccionTiempo').style.background = "rgba(255, 42, 42, 0.1)";
+            document.getElementById('seccionTiempo').style.borderColor = "#ff2a2a";
+            document.getElementById('tituloRespuestas').innerText = "DEFINICIONES EN LA RED:";
+            document.getElementById('tituloRespuestas').style.color = "#e2e8f0";
+
+            tiempo = 45; 
+            votoEmitido = false;
+
+            intervalo = setInterval(() => {
+                tiempo--;
+                if (tiempo > 15) {
+                    document.getElementById('reloj').innerText = tiempo - 15;
+                } else if (tiempo <= 15 && tiempo > 0) {
+                    pasarAVotacion();
+                    document.getElementById('reloj').innerText = tiempo;
+                } else if (tiempo <= 0) {
+                    clearInterval(intervalo);
+                    revelarGanadorLocal();
+                }
+            }, 1000);
+
+            if (refRespuestasActual) { refRespuestasActual.off(); }
+
+            refRespuestasActual = database.ref(`partida/rondas/${rondaActual}/respuestas`);
+            refRespuestasActual.on('child_added', (snapshot) => {
+                const data = snapshot.val();
+                const id = snapshot.key;
+                const contenedor = document.getElementById('contenedorRespuestas');
+                
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.id = `item-${id}`;
+                div.innerText = data.texto;
+                
+                div.onclick = function() {
+                    if (data.autorId === miID) { alert("¡No puedes votar por tu propia definición!"); return; }
+
+                    if (tiempo <= 15 && tiempo > 0 && !votoEmitido) {
+                        database.ref(`partida/rondas/${rondaActual}/respuestas/${id}/votos`).transaction(v => (v || 0) + 1);
+                        database.ref(`partida/jugadores/${data.autorId}/puntos`).transaction(p => (p || 0) + 1);
+
+                        div.className = 'list-item voted';
+                        votoEmitido = true;
+                        document.querySelectorAll('.list-item').forEach(el => el.style.cursor = 'not-allowed');
+                    }
+                };
+                contenedor.appendChild(div);
+            });
+        }
+
+        function pasarAVotacion() {
+            document.getElementById('seccionTiempo').innerHTML = "FASE DE VOTACIÓN: <span id='reloj'>15</span>S";
+            document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 255, 0.1)";
+            document.getElementById('seccionTiempo').style.borderColor = "#00ffff";
+            document.getElementById('tituloRespuestas').innerText = "¡HAZ CLIC EN TU FAVORITA PARA VOTAR!";
+            document.getElementById('tituloRespuestas').style.color = "#00ffff";
+            document.getElementById('formularioEnvio').style.display = 'none';
+        }
+
+        function enviarDefinicion() {
+            const texto = document.getElementById('inputDefinicion').value.trim();
+            if (texto === "") return;
+
+            database.ref(`partida/rondas/${rondaActual}/respuestas`).push({
+                texto: texto,
+                votos: 0,
+                autorId: miID 
+            });
+
+            document.getElementById('inputDefinicion').disabled = true;
+            document.getElementById('btnEnviar').disabled = true;
+            document.getElementById('btnEnviar').innerText = "ESPERANDO AL EQUIPO...";
+        }
+
+        function revelarGanadorLocal() {
+            database.ref(`partida/rondas/${rondaActual}/respuestas`).once('value', (snapshot) => {
+                let maxVotos = -1;
+                let masVotada = "Nadie propuso ninguna definición 🕵️";
+                
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    if (data.votos > maxVotos) {
+                        maxVotos = data.votos;
+                        masVotada = data.texto;
+                    }
+                });
+
+                document.getElementById('pantallaJuego').style.display = 'none';
+                document.getElementById('pantallaRespuestas').style.display = 'none';
+                document.getElementById('seccionTiempo').style.display = 'none';
+                
+                document.getElementById('textoGanador').innerText = masVotada;
+                document.getElementById('textoReal').innerText = palabrasDeLaPartida[rondaActual - 1].r;
+                document.getElementById('pantallaFinal').style.display = 'block';
+            });
+        }
+
+        function pasarSiguienteRonda() {
+            if (!soyHost) return;
+            database.ref('partida/ronda').set(rondaActual + 1);
+        }
+
+        function declararCampeon() {
+            database.ref('partida/jugadores').once('value', (snapshot) => {
+                let maxPuntos = -1;
+                let campeon = "Sin identificar";
+
+                snapshot.forEach((child) => {
+                    const j = child.val();
+                    if (j.puntos > maxPuntos) {
+                        maxPuntos = j.puntos;
+                        campeon = j.nombre;
+                    }
+                });
+
+                document.getElementById('nombreCampeon').innerText = campeon;
+                document.getElementById('pantallaCorona').style.display = 'flex';
+                
+                reproducirSonidoVictoria();
+            });
+        }
+
+        // Reinicio completo desde el Host
+        function reiniciarPartidaCompleta() {
+            if (!soyHost) return;
+            
+            // 1. Limpiar respuestas anteriores
+            database.ref('partida/rondas').remove();
+            // 2. Elegir un nuevo set de 10 palabras
+            prepararNuevasPalabras();
+            // 3. Resetear puntuación de todos los jugadores
+            reseteoDePuntos();
+            // 4. Volver a la Ronda 1 (Esto sacará a todos de la pantalla de corona)
+            database.ref('partida/ronda').set(1);
+        }
+
+        function reproducirSonidoVictoria() {
+            try {
+                const context = new (window.AudioContext || window.webkitAudioContext)();
+                function sonarNota(frecuencia, tiempoInicio, duracion) {
+                    const osc = context.createOscillator();
+                    const gain = context.createGain();
+                    osc.type = 'square';
+                    osc.frequency.value = frecuencia;
+                    gain.gain.setValueAtTime(0.1, context.currentTime + tiempoInicio);
+                    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + tiempoInicio + duracion);
+                    osc.connect(gain);
+                    gain.connect(context.destination);
+                    osc.start(context.currentTime + tiempoInicio);
+                    osc.stop(context.currentTime + tiempoInicio + duracion);
+                }
+                sonarNota(523.25, 0.0, 0.2); 
+                sonarNota(659.25, 0.15, 0.2); 
+                sonarNota(783.99, 0.3, 0.2); 
+                sonarNota(1046.50, 0.45, 0.5); 
+            } catch (e) { console.log("Audio bloqueado por el navegador."); }
+        }
+    </script></body></html>
