@@ -2,6 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRON: El Traductor Absurdo - Matrix Edition</title>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     
@@ -40,8 +41,6 @@
             position: relative; z-index: 1; /* Sobre el canvas */
         }
         
-        /* Eliminados los bordes decorativos de las esquinas de Tron */
-
         h1 {
             color: #ffffff; text-transform: uppercase; letter-spacing: 5px;
             font-size: 1.8rem; text-shadow: 0 0 10px var(--accent-glow);
@@ -142,9 +141,11 @@
 
     </style></head><body>
 
+    <audio id="musicaFondo" loop src="https://www.chosic.com/wp-content/uploads/2021/07/The-Dark-Amulet.mp3"></audio>
+
     <canvas id="matrixCanvas"></canvas>
 
-    <button id="btnMusica" onclick="conmutarMusica()" title="Encender/Apagar Música de Fondo">🔊</button>
+    <button id="btnMusica" class="apagado" onclick="conmutarMusica()" title="Encender/Apagar Música de Fondo">🔇</button>
 
     <div id="pantallaCorona">
         <div class="corona-box">
@@ -321,6 +322,7 @@
             appId: "1:481986891272:web:b7c26ffd43365768aacbbd"
         };
 
+        // Inicializar Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -383,7 +385,6 @@
             database.ref('partida/palabrasActuales').on('value', (snapshot) => {
                 if (snapshot.exists()) { 
                     palabrasDeLaPartida = snapshot.val(); 
-                    // Una vez que llegan las palabras, cargamos la interfaz
                     cargarRondaUI();
                 }
             });
@@ -436,7 +437,6 @@
         function cargarRondaUI() {
             clearInterval(intervalo);
             
-            // Si las palabras no han llegado de Firebase, esperamos medio segundo
             if (palabrasDeLaPartida.length === 0) {
                 setTimeout(cargarRondaUI, 500);
                 return;
@@ -459,7 +459,7 @@
             document.getElementById('seccionTiempo').style.display = 'inline-block';
             document.getElementById('seccionTiempo').innerHTML = "SECUENCIA DE INGRESO: <span id='reloj'>30</span>S";
             document.getElementById('seccionTiempo').style.background = "rgba(0, 255, 65, 0.1)";
-            document.getElementById('seccionTiempo').style.borderColor = "#00ff41"; // Corregido el CSS aquí
+            document.getElementById('seccionTiempo').style.borderColor = "#00ff41"; 
             document.getElementById('tituloRespuestas').innerText = "REGISTROS DETECTADOS EN LA RED:";
             document.getElementById('tituloRespuestas').style.color = "#ffffff";
 
@@ -597,8 +597,27 @@
             database.ref('partida/ronda').set(1);
         }
 
-        // Funciones de utilidad para evitar que truene si faltaban
-        function conmutarMusica() { alert("Música en desarrollo"); }
+        // === 8. LÓGICA DE AUDIO (Arreglada) ===
+        let musicaIniciada = false;
+
+        function conmutarMusica() {
+            const audio = document.getElementById('musicaFondo');
+            const btn = document.getElementById('btnMusica');
+            
+            if (!musicaIniciada || audio.paused) {
+                audio.play().then(() => {
+                    btn.innerText = "🔊";
+                    btn.classList.remove('apagado');
+                    musicaIniciada = true;
+                }).catch(error => {
+                    alert("Haz clic en cualquier parte de la pantalla primero (interacción de usuario requerida por el navegador) y luego vuelve a presionar el botón de música.");
+                });
+            } else {
+                audio.pause();
+                btn.innerText = "🔇";
+                btn.classList.add('apagado');
+            }
+        }
     </script>
 </body>
 </html>
