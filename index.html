@@ -141,7 +141,7 @@
 
     </style></head><body>
 
-    <audio id="musicaFondo" loop src="https://www.chosic.com/wp-content/uploads/2021/07/The-Dark-Amulet.mp3"></audio>
+    <audio id="musicaFondo" loop src="https://codeskulptor-demos.commondatastorage.googleapis.com/descent/background%20music.mp3"></audio>
 
     <canvas id="matrixCanvas"></canvas>
 
@@ -367,9 +367,11 @@
                     document.getElementById('msgEsperaParticipante').style.display = 'none';
                     database.ref('partida/host').onDisconnect().remove();
                     
+                    // PURGA TOTAL de miembros y datos previos para evitar fantasmas
+                    database.ref('partida/jugadores').remove();
+                    
                     prepararNuevasPalabras(); 
                     database.ref('partida/ronda').set(1);
-                    reseteoDePuntos();
                 }
             });
 
@@ -507,7 +509,6 @@
                 contenedor.innerHTML = '';
                 let respuestasArray = [];
                 
-                // Limpiar textos repetidos (evita duplicidad si alguien spamea)
                 let textosRegistrados = new Set();
                 
                 snapshot.forEach((child) => {
@@ -520,12 +521,10 @@
                 
                 const palabraObj = palabrasDeLaPartida[rondaActual - 1];
                 
-                // Solo empujar la correcta si no fue escrita ya por alguien
                 if (!textosRegistrados.has(palabraObj.r.toLowerCase())) {
                     respuestasArray.push({ id: "correcta", data: { texto: palabraObj.r, autorId: "SISTEMA" } });
                 }
 
-                // Aleatorizar para que no gane siempre el mismo lugar
                 respuestasArray.sort(() => 0.5 - Math.random());
 
                 respuestasArray.forEach((item) => {
@@ -595,8 +594,9 @@
         function reiniciarPartidaCompleta() {
             if (!soyHost) return;
             database.ref('partida/rondas').set(null); 
+            // Purga de miembros también al reiniciar
+            database.ref('partida/jugadores').remove();
             prepararNuevasPalabras();
-            reseteoDePuntos();
             database.ref('partida/ronda').set(1);
         }
 
@@ -615,6 +615,4 @@
                 btn.classList.add('apagado');
             }
         }
-    </script>
-</body>
-</html>
+    </script></body></html>
